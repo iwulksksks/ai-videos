@@ -1,16 +1,32 @@
 // SQLite storage: ideas, jobs, settings, activity log and trend reports.
-import Database from "better-sqlite3";
+// Node's built-in SQLite (Node 22.13+): nothing to compile, so installs work on any computer.
+import type { DatabaseSync } from "node:sqlite";
 import fs from "node:fs";
 import path from "node:path";
 import { config } from "./config";
 
-let db: Database.Database | null = null;
+/** Load node:sqlite without its harmless "experimental" warning, which looks scary in the console. */
+function loadSqlite(): typeof import("node:sqlite") {
+  const original = process.emitWarning;
+  process.emitWarning = ((w: string | Error, ...rest: unknown[]) => {
+    if (String(typeof w === "string" ? w : w.message).includes("SQLite")) return;
+    return (original as (...a: unknown[]) => void).call(process, w, ...rest);
+  }) as typeof process.emitWarning;
+  try {
+    return process.getBuiltinModule("node:sqlite") as typeof import("node:sqlite");
+  } finally {
+    process.emitWarning = original;
+  }
+}
 
-export function getDb(): Database.Database {
+let db: DatabaseSync | null = null;
+
+export function getDb(): DatabaseSync {
   if (db) return db;
   fs.mkdirSync(config.dataDir, { recursive: true });
-  db = new Database(path.join(config.dataDir, "reelhouse.db"));
-  db.pragma("journal_mode = WAL");
+  const { DatabaseSync: Sqlite } = loadSqlite();
+  db = new Sqlite(path.join(config.dataDir, "reelhouse.db"));
+  db.exec("PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000;");
   db.exec(`
     CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS ideas (
