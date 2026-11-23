@@ -15,6 +15,20 @@ if ! command -v node >/dev/null 2>&1; then
   exit 1
 fi
 
+if ! node scripts/check-node.mjs; then
+  open https://nodejs.org
+  read -r -p "Press Enter to close."
+  exit 1
+fi
+
+case "$PWD" in
+  *"/Library/CloudStorage/"*|*"/Mobile Documents/"*)
+    echo "!! Heads up: this folder is inside iCloud, OneDrive or another synced folder."
+    echo "!! Syncing the thousands of files Reelhouse installs is slow and can break installing."
+    echo "!! If anything goes wrong, move the folder to your home folder (for example ~/Reelhouse)."
+    echo "";;
+esac
+
 NO_OLLAMA=0
 if ! command -v ollama >/dev/null 2>&1; then
   echo "!! Ollama is not installed. Stories will use the built-in demo writer for now."
@@ -31,9 +45,18 @@ fi
 
 [ -f .env.local ] || cp .env.example .env.local
 
-if [ ! -d node_modules ]; then
+if [ ! -f node_modules/.reelhouse-installed ]; then
   echo "Installing the studio. The first time takes a few minutes..."
-  npm install || { echo "!! Installing failed. Check your internet and try again."; read -r; exit 1; }
+  if ! npm install; then
+    echo ""
+    echo "!! Installing failed. The real reason is in the \"npm error\" lines above."
+    echo "!! Common causes: no internet, or the folder is inside iCloud/OneDrive (move it to ~/Reelhouse)."
+    echo "!! Then delete the node_modules folder and double-click this file again."
+    echo "!! Still stuck? Send a screenshot of the first error lines."
+    read -r -p "Press Enter to close."
+    exit 1
+  fi
+  echo ok > node_modules/.reelhouse-installed
 fi
 
 if [ "$PYOK" = "1" ] && [ ! -f voices/en_US-lessac-medium.onnx ]; then

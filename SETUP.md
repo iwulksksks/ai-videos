@@ -6,7 +6,7 @@ Reelhouse runs on your own computer. Everything is free: the story AI (Ollama), 
 
 Install these once. Restart your computer after installing them.
 
-1. **Node.js**: go to <https://nodejs.org> and download the button that says **LTS**. Open the file and click Next until it's done.
+1. **Node.js**: go to <https://nodejs.org> and download the button that says **LTS**. Open the file and click Next until it's done. Any version from 22.13 up works, including the newest one. You don't need Visual Studio or any build tools.
 2. **Ollama** (the free story-writing AI): go to <https://ollama.com>, click **Download**, install it and open it once. On Windows it sits as a small llama icon near the clock. On a Mac it's a llama in the top menu bar.
 3. **Python 3** (needed for the voices): go to <https://www.python.org/downloads>, download the latest Python 3.
    - **Windows: on the first install screen, tick the box "Add python.exe to PATH"** before clicking Install. This is the step people miss most.
@@ -16,7 +16,9 @@ If you skip Ollama, the studio still works with built-in demo stories. If you sk
 ## 2. Download Reelhouse
 
 1. Open the project page on GitHub, click the green **Code** button, then **Download ZIP**.
-2. Unzip it somewhere easy, like your Documents folder. Keep the folder name short, for example `Documents\Reelhouse`.
+2. Unzip it somewhere **outside OneDrive, iCloud or Dropbox**, for example `C:\Reelhouse` on Windows or a `Reelhouse` folder in your home folder on a Mac. Keep the folder name short.
+
+> **Why not OneDrive?** On many Windows computers, Documents and Desktop are inside OneDrive, so they sync to the cloud. Reelhouse installs tens of thousands of small files and makes big video files. OneDrive tries to upload all of them, which slows everything down and can lock files halfway through installing so it fails. If your folder is already in OneDrive, move it: in File Explorer, cut the whole Reelhouse folder and paste it into `C:\`, then delete the `node_modules` folder inside it and start again. The launcher warns you if it notices OneDrive.
 
 ## 3. Start it
 
@@ -105,6 +107,10 @@ See [YOUTUBE.md](YOUTUBE.md). It works from this computer without a tunnel, uplo
 | Problem | Fix |
 | --- | --- |
 | `!! Node.js is not installed` | Install Node.js LTS (step 1), restart the computer, try again. |
+| `!! Your Node.js is version ... too old` | Install the LTS version from <https://nodejs.org>, restart the computer, try again. |
+| `!! Installing failed` | Read the first red `npm error` lines above it. Usually it's no internet, an antivirus blocking npm, or OneDrive locking files (move the folder out of OneDrive, see step 2). Then delete the `node_modules` folder and start again. |
+| `gyp ERR!` or "Could not find any Visual Studio" | You have an old copy of Reelhouse. Download the latest ZIP (step 2), delete `node_modules`, and start again. Reelhouse no longer needs Visual Studio. |
+| Files keep "syncing" or say "in use" | The folder is in OneDrive. Move it to `C:\Reelhouse` (step 2). |
 | Studio setup says Ollama is not running | Open the Ollama app. On Windows, look for the llama near the clock. |
 | Studio setup says the story model is missing | Open a terminal in the Reelhouse folder and run `npm run setup:ollama`, or just restart the launcher. |
 | Videos have no voices | Install Python with "Add to PATH" ticked, then run `npm run setup:voice` in the Reelhouse folder. |

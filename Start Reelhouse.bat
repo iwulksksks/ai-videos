@@ -16,6 +16,21 @@ if errorlevel 1 (
   exit /b 1
 )
 
+node scripts\check-node.mjs
+if errorlevel 1 (
+  start https://nodejs.org
+  pause
+  exit /b 1
+)
+
+echo "%~dp0" | findstr /i "\OneDrive\" >nul
+if not errorlevel 1 (
+  echo !! Heads up: this folder is inside OneDrive. OneDrive tries to sync the thousands of
+  echo !! files Reelhouse installs, which is slow and can lock files so installing fails.
+  echo !! If anything goes wrong, move the whole folder to C:\Reelhouse and run it from there.
+  echo.
+)
+
 where ollama >nul 2>nul
 if errorlevel 1 (
   echo !! Ollama is not installed. Stories will use the built-in demo writer for now.
@@ -35,10 +50,11 @@ if not exist .env.local (
   copy .env.example .env.local >nul
 )
 
-if not exist node_modules (
+if not exist node_modules\.reelhouse-installed (
   echo Installing the studio. The first time takes a few minutes...
   call npm install
-  if errorlevel 1 ( echo !! Installing failed. Check your internet and try again. & pause & exit /b 1 )
+  if errorlevel 1 goto installfailed
+  echo ok> node_modules\.reelhouse-installed
 )
 
 if "%PYOK%"=="1" (
@@ -73,3 +89,17 @@ echo.
 start "" http://localhost:3000
 call npm run start
 pause
+exit /b 0
+
+:installfailed
+echo.
+echo !! Installing failed. The real reason is in the red "npm error" lines above.
+echo !! Common causes:
+echo !!   - No internet connection, or a firewall or antivirus blocking npm.
+echo !!   - The folder is inside OneDrive and OneDrive locked some files.
+echo !!     Move the whole folder to C:\Reelhouse and try again.
+echo !!   - "gyp" or "Visual Studio" errors: an old copy of Reelhouse. Download the latest version.
+echo !! Then delete the node_modules folder and double-click this file again.
+echo !! Still stuck? Send a screenshot of the first red lines.
+pause
+exit /b 1
