@@ -18,7 +18,7 @@ function clean(w: string) {
   return w.replace(/[^\p{L}\p{N}'-]/gu, "");
 }
 
-function Words({ text, highlight, color = "#fff" }: { text: string; highlight: string | null; color?: string }) {
+function Words({ text, highlight, color = "#fff", marker = false }: { text: string; highlight: string | null; color?: string; marker?: boolean }) {
   let used = false;
   return (
     <>
@@ -26,7 +26,7 @@ function Words({ text, highlight, color = "#fff" }: { text: string; highlight: s
         const hit = !used && highlight !== null && clean(w) === highlight;
         if (hit) used = true;
         return (
-          <span key={i} style={{ color: hit ? YELLOW : color }}>
+          <span key={i} style={hit && marker ? { color, background: YELLOW, borderRadius: 10, padding: "0 6px" } : { color: hit ? YELLOW : color }}>
             {w}
             {" "}
           </span>
@@ -83,7 +83,7 @@ export const NarratorBox: React.FC<{ text: string; highlight: string | null; fra
           textAlign: "center",
         }}
       >
-        <Words text={text} highlight={highlight} color="#3b2a1a" />
+        <Words text={text} highlight={highlight} color="#3b2a1a" marker />
       </div>
     </AbsoluteFill>
   );

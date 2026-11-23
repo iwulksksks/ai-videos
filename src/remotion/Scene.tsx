@@ -37,7 +37,9 @@ function camera(beat: StagedBeat, frame: number, style: StoryStyle): CameraState
   }
 }
 
-function Layer({ children, depth, cam, look, blur }: { children: React.ReactNode; depth: number; cam: CameraState; look: Look; blur: number }) {
+// Depth of field is faked with "atmospheric haze" (a see-through wash of sky color on far layers).
+// A real CSS blur looks similar but makes CPU rendering about 3 times slower.
+function Layer({ children, depth, cam, look, haze = 0, hazeColor = "#ffffff" }: { children: React.ReactNode; depth: number; cam: CameraState; look: Look; haze?: number; hazeColor?: string }) {
   const deep = look === "2.5d";
   const f = deep ? depth : 1;
   const zoom = 1 + (cam.zoom - 1) * f;
@@ -49,11 +51,11 @@ function Layer({ children, depth, cam, look, blur }: { children: React.ReactNode
       style={{
         transform: `perspective(2400px) translate(${tx}px, ${ty}px) scale(${zoom}) rotateY(${rot}deg)`,
         transformOrigin: `50% ${(FEET_Y / HEIGHT) * 100}%`,
-        filter: deep && blur > 0 ? `blur(${blur}px)` : undefined,
       }}
     >
       <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} width={WIDTH} height={HEIGHT} style={{ overflow: "visible" }}>
         {children}
+        {deep && haze > 0 && <rect x={-700} y={-700} width={WIDTH + 1400} height={HEIGHT + 1400} fill={hazeColor} opacity={haze} />}
       </svg>
     </AbsoluteFill>
   );
@@ -118,10 +120,10 @@ export const Scene: React.FC<{
 
   return (
     <AbsoluteFill style={{ backgroundColor: "#000", overflow: "hidden", opacity: fadeIn }}>
-      <Layer depth={0.35} cam={cam} look={look} blur={beat.camera === "close" ? 7 : 3}>
+      <Layer depth={0.35} cam={cam} look={look} haze={beat.camera === "close" ? 0.3 : 0.16} hazeColor={SKY[beat.time].bottom}>
         {layers.far}
       </Layer>
-      <Layer depth={1} cam={cam} look={look} blur={0}>
+      <Layer depth={1} cam={cam} look={look}>
         {layers.mid}
         {beat.cast.map((c, i) => {
           const ch = characters[c.who];
@@ -145,7 +147,7 @@ export const Scene: React.FC<{
           );
         })}
       </Layer>
-      <Layer depth={1.7} cam={cam} look={look} blur={deep ? 6 : 0}>
+      <Layer depth={1.7} cam={cam} look={look}>
         {layers.near}
       </Layer>
       {deep && <Lighting beat={beat} frame={frame} />}
