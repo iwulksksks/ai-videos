@@ -1,6 +1,7 @@
 // QA Lab (Vera): rule checks always, then an AI edit pass.
 import { editStory, type WriterName } from "../writers";
 import { STYLE_RULES, StorySchema, type Story, type StoryStyle } from "../story";
+import { HERO } from "../town";
 
 export type QaResult = {
   verdict: "approved" | "fixed" | "rejected";
@@ -28,8 +29,12 @@ export function ruleCheck(input: Story, style: StoryStyle): { story: Story; issu
   const fatal: string[] = [];
   const story: Story = structuredClone(input);
 
-  // Characters: unique names, at most 3.
-  if (story.characters.length > 3) {
+  // Town Gossip: Pip leads every episode; the neighbors around him change.
+  if (style === "gossip" && story.characters[0]?.name.toLowerCase() !== HERO.name.toLowerCase()) {
+    issues.push("Pip isn't character 0 in this episode");
+  }
+  // Characters: unique names, at most 3 (Town Gossip has its fixed cast of 5).
+  if (style !== "gossip" && story.characters.length > 3) {
     story.characters = story.characters.slice(0, 3);
     issues.push("Trimmed the cast to 3 characters");
   }
@@ -61,7 +66,8 @@ export function ruleCheck(input: Story, style: StoryStyle): { story: Story; issu
     const before = b.cast.length;
     b.cast = b.cast.filter((c, j, arr) => c.who < n && arr.findIndex((o) => o.who === c.who) === j).slice(0, 3);
     if (b.cast.length !== before) issues.push(`Beat ${i + 1}: removed characters that don't exist`);
-    if (!b.cast.length) {
+    const onPhone = !!b.screen && b.screen !== "none" && b.screen !== "post";
+    if (!b.cast.length && !onPhone) {
       b.cast = [{ who: 0, mood: "happy", action: "idle" }];
       issues.push(`Beat ${i + 1}: nobody was on screen, added the hero`);
     }
@@ -70,7 +76,7 @@ export function ruleCheck(input: Story, style: StoryStyle): { story: Story; issu
       b.speaker = null;
       issues.push(`Beat ${i + 1}: speaker didn't exist`);
     }
-    if (b.line && b.line.trim() && b.speaker == null) b.speaker = b.cast[0].who;
+    if (b.line && b.line.trim() && b.speaker == null) b.speaker = b.cast[0]?.who ?? 0;
     if ((!b.line || !b.line.trim()) && b.speaker != null) b.speaker = null;
     if (b.line && !b.line.trim()) b.line = null;
     if (b.speaker != null && !b.cast.some((c) => c.who === b.speaker) && b.cast.length < 3) {
@@ -93,7 +99,7 @@ export function ruleCheck(input: Story, style: StoryStyle): { story: Story; issu
 
   // Hook and Twist Tale: dialogue is rare.
   if (style !== "cozy") {
-    const max = style === "twist" ? 3 : 4;
+    const max = style === "twist" ? 3 : style === "gossip" ? 6 : 4;
     const lines = story.beats.filter((b) => b.line);
     if (lines.length > max) {
       lines.slice(max).forEach((b) => {
@@ -116,6 +122,22 @@ export function ruleCheck(input: Story, style: StoryStyle): { story: Story; issu
     if (story.caption !== story.title || story.hashtags.length) {
       story.caption = story.title;
       story.hashtags = [];
+    }
+  }
+
+  if (style === "gossip") {
+    // Screens only make sense with their text; drop a screen the writer left empty.
+    story.beats.forEach((b, i) => {
+      if (b.screen === "none") b.screen = null;
+      if (b.screen && b.screen !== "views" && !b.screenText?.trim()) {
+        b.screen = null;
+        if (!b.cast.length) b.cast = [{ who: 0, mood: "happy", action: "idle" }];
+        issues.push(`Beat ${i + 1}: removed a phone screen with no text`);
+      }
+    });
+    const last = story.beats[story.beats.length - 1];
+    if (/\b(part 2|part two|to be continued|stay tuned|subscribe|follow)\b/i.test(last.narration)) {
+      issues.push("The ending teases more; Town Gossip should stop on the ironic twist");
     }
   }
 

@@ -6,6 +6,7 @@ import {
   SFX,
   COLORS,
   EXPRESSIONS,
+  SCREENS,
   SETTINGS,
   STYLE_RULES,
   TIMES,
@@ -15,6 +16,17 @@ import {
   type StoryStyle,
   type Theme,
 } from "../story";
+import { HERO, NEIGHBORS, TOWN, episodeCast, shapeById, townFolk, type EpisodePlan } from "../town";
+
+const TOWN_INTRO =
+  `Town Gossip episodes all happen in ${TOWN.name}, a bright toy-block town. Pip (${HERO.role}) is in every episode. ` +
+  `Every episode has a DIFFERENT kind of story, different neighbors and a different situation, so no two videos feel alike. ` +
+  `If people post videos, they use a made-up app called ${TOWN.app}. Never name a real app, site, brand or celebrity.`;
+
+function folkLine(name: string, i: number, color?: string): string {
+  const f = townFolk(name);
+  return `${i}. ${name}${color ? ` (${color} clothes this time)` : ""}${f ? `: ${f.role}` : ""}.`;
+}
 
 const SAFETY =
   "Stories are always original and suitable for all ages. No real people, celebrities, brands, " +
@@ -60,10 +72,20 @@ export function pitchesPrompt(opts: {
   style: StoryStyle;
   count: number;
   niche?: ScoutInsights | null;
+  plans?: EpisodePlan[]; // Town Gossip: one story shape and neighbor line-up per pitch
 }): string {
   const styleNote =
     opts.style === "twist"
       ? "Style TWIST TALE: a 60-second tale built on a REAL, checkable mechanism (a clever trick, an invention, a law of physics, a psychology effect or a true historical event). Someone does something that looks foolish, everyone laughs, the sensible choice seems right, then it fails and the hero's strange act turns out to be genius because of that mechanism. Characters and story are original; only the mechanism is real. Avoid mechanisms you are not sure about."
+      : opts.style === "gossip"
+      ? [
+          "Style TOWN GOSSIP: 60-second comedy episodes of small-town life that build from something tiny to something absurd, with a twist ending that makes people rewatch and comment.",
+          TOWN_INTRO,
+          "Write each pitch for its own story shape and neighbors below. Make each one feel fresh: a different situation, different jokes, a different ending. Do not build every episode around a catchphrase; if one has a catchphrase, it must be new.",
+          ...(opts.plans ?? []).map(
+            (p, i) => `Pitch ${i + 1}: shape "${p.shape.name}" (${p.shape.plan}) Neighbors: ${p.neighbors.map((n) => `${n.name} (${n.role})`).join("; ")}.`,
+          ),
+        ].join("\n")
       : opts.style === "hook"
       ? "Style HOOK: first-person underdog stories. A world with one clear rule (everyone gets a power, mark, rank or creature at a certain age). The overlooked hero turns out to be far beyond everyone else, ending on a cliffhanger."
       : "Style COZY: gentle, funny, warm little tales with an emotional payoff and no moral lecture.";
@@ -80,10 +102,12 @@ export function pitchesPrompt(opts: {
     opts.usedTitles.length
       ? `Do NOT reuse or closely copy these titles we already made: ${opts.usedTitles.slice(0, 60).join("; ")}.`
       : "",
-    opts.style === "twist"
+    opts.style === "gossip"
+      ? `Pitch ${opts.count} episodes, in the order above. Each pitch: title (3 to 7 words, catchy), logline (one sentence), genre (one or two words), twist (the ending in one sentence), era (the shape's id: ${(opts.plans ?? []).map((p) => p.shape.id).join(", ")}, in order) and skeptic (the neighbors' names, comma separated, exactly as given).`
+      : opts.style === "twist"
       ? `Pitch ${opts.count} different original stories. Each pitch: title (4 to 8 words, title case, framed as a mystery like "Why ...", "How ... Worked" or "The ... That ...", no emoji or hashtags), logline (one sentence), genre (one or two words), twist (the payoff in one sentence), mechanism (the real trick or fact, explained correctly in one or two plain sentences), era (when and where it is set) and skeptic (who mocks the hero).`
       : `Pitch ${opts.count} different original stories. Each pitch: title (max 6 words), logline (one sentence), genre (one or two words) and twist (the surprise in one sentence).`,
-    opts.style === "twist"
+    opts.style === "twist" || opts.style === "gossip"
       ? 'Answer as JSON: {"pitches":[{"title":"...","logline":"...","genre":"...","twist":"...","mechanism":"...","era":"...","skeptic":"..."}]}'
       : 'Answer as JSON: {"pitches":[{"title":"...","logline":"...","genre":"...","twist":"..."}]}',
   ]
@@ -91,18 +115,55 @@ export function pitchesPrompt(opts: {
     .join("\n");
 }
 
-function vocab(): string {
+function vocab(style?: StoryStyle): string {
   return [
     `Allowed settings: ${SETTINGS.join(", ")}.`,
     `Allowed times: ${TIMES.join(", ")}.`,
     `Character colors: ${COLORS.join(", ")}. Accessories: ${ACCESSORIES.join(", ")}.`,
     `Moods: ${EXPRESSIONS.join(", ")}. Actions: ${ACTIONS.join(", ")}.`,
-    "Characters are simple round cartoon blobs, so describe them only by name, color and accessory.",
-    "In each beat, 'cast' lists who is on screen by their index in 'characters' (0, 1 or 2), with a mood and action. Use at most 3 on screen.",
+    style === "gossip"
+      ? "Characters are chunky toy-block people. In each beat, 'cast' lists who is on screen by their index in 'characters' (0 to 4), with a mood and action. Use at most 3 on screen."
+      : "Characters are simple round cartoon blobs, so describe them only by name, color and accessory.",
+    style === "gossip" ? "" : "In each beat, 'cast' lists who is on screen by their index in 'characters' (0, 1 or 2), with a mood and action. Use at most 3 on screen.",
     "'speaker' is the index of the character saying 'line' in that beat, or null when nobody speaks. 'line' is null when nobody speaks.",
     `Optional per beat: 'prop' (${PROPS.join(", ")}) shows a big close-up of that object instead of the characters, for explaining how something works; 'sfx' (${SFX.join(", ")}) plays a sound effect as the beat starts. Use null when not needed.`,
+    style === "gossip" ? `Optional per beat: 'screen' (${SCREENS.join(", ")}), 'screenText' and 'count', as described above.` : "",
     "caption: a short, punchy social caption (one or two sentences). hashtags: 5 to 8 tags without the # sign.",
-  ].join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+/** The neighbors a Town Gossip pitch was planned with (stored in its 'skeptic' field). */
+export function gossipNeighbors(pitch: Pick<Pitch, "skeptic">): string[] {
+  const names = (pitch.skeptic ?? "").split(/[,;]| and /).map((n) => n.trim()).filter(Boolean);
+  return names.map((n) => townFolk(n)?.name).filter((n): n is string => !!n && n !== HERO.name);
+}
+
+function gossipRules(pitch: Pitch): string[] {
+  const r = STYLE_RULES.gossip;
+  const shape = shapeById(pitch.era) ?? null;
+  let names = gossipNeighbors(pitch);
+  if (!names.length) names = NEIGHBORS.slice(0, 3).map((n) => n.name);
+  const cast = episodeCast(names);
+  return [
+    `STYLE TOWN GOSSIP. ${r.minBeats} to ${r.maxBeats} beats, ${r.seconds} seconds, 140 to 190 spoken words in total.`,
+    TOWN_INTRO,
+    "Characters for this episode (use exactly these, in this order, as 'characters', with these colors and accessories):",
+    ...cast.map((c, i) => folkLine(c.name, i, i === 0 ? undefined : c.color)),
+    `'characters' JSON: ${JSON.stringify(cast)}`,
+    shape ? `Story shape: "${shape.name}". ${shape.plan}` : "Story shape: build from something tiny to something absurd, then twist.",
+    "Every scene should make sense for THIS situation: pick settings that fit it, and give each neighbor something only they would do.",
+    "One casual third-person narrator, fast and deadpan. Each beat's narration is ONE short sentence, ideally 4 to 10 words, so the picture cuts about every 3 seconds.",
+    "Beat 1 is a cold open on the strangest or funniest moment, with no explanation. The middle escalates, one neighbor at a time. The ending is a twist (ironic, sweet or absurd) with one final punch-line beat.",
+    `Characters may speak short lines (under ${r.maxLineWords} words), at most 6 in the episode. Don't repeat the same line over and over.`,
+    `Use settings that fit the story: ${["town", "plaza", "cafe", "classroom", "bedroom", "market", "forest", "beach", "workshop", "lab", "harbor", "city"].join(", ")}. Vary them.`,
+    shape?.screens
+      ? `Phone screens fit this shape: set 'screen' to one of ${SCREENS.filter((x) => x !== "none").join(", ")} on 2 to 4 beats, with 'screenText' (under 6 words) and 'count' (like "12M", "340K" or "1K") where it shows a number. Other beats use screen null.`
+      : "Phone screens: this shape is mostly NOT about the internet. Use screen null on every beat, except at most one 'comments' or 'post' beat if it truly fits.",
+    "The last beat ends on the punch line: no 'part 2', no 'follow for more', so it loops.",
+    "Title: 3 to 7 words, catchy. caption: one short funny line. hashtags: 4 to 6.",
+  ];
 }
 
 export function storyPrompt(pitch: Pitch, style: StoryStyle): string {
@@ -124,6 +185,8 @@ export function storyPrompt(pitch: Pitch, style: StoryStyle): string {
           "The mechanism must be real and explained correctly. Put it in one or two plain sentences in the 'mechanism' field.",
           "Title: 4 to 8 words, title case, mystery framing. caption: the title only. hashtags: an empty list.",
         ]
+      : style === "gossip"
+      ? gossipRules(pitch)
       : style === "hook"
       ? [
           `STYLE HOOK. ${r.minBeats} to ${r.maxBeats} beats, ${r.seconds} seconds total.`,
@@ -151,10 +214,12 @@ export function storyPrompt(pitch: Pitch, style: StoryStyle): string {
     pitch.skeptic ? `Who mocks the hero: ${pitch.skeptic}` : "",
     "",
     ...styleRules,
-    "Use 1 to 3 characters. Character 0 is the hero.",
-    vocab(),
+    style === "gossip" ? "Use the characters exactly as listed above, in that order. Character 0 (Pip) is the hero." : "Use 1 to 3 characters. Character 0 is the hero.",
+    vocab(style),
     "",
-    'Answer as JSON: {"title":"...","logline":"...","mechanism":null,"characters":[{"name":"...","color":"...","accessory":"..."}],"beats":[{"setting":"...","time":"...","narration":"...","cast":[{"who":0,"mood":"...","action":"..."}],"speaker":null,"line":null,"prop":null,"sfx":null}],"caption":"...","hashtags":["..."]}',
+        style === "gossip"
+      ? 'Answer as JSON: {"title":"...","logline":"...","mechanism":null,"characters":[{"name":"...","color":"...","accessory":"..."}],"beats":[{"setting":"...","time":"...","narration":"...","cast":[{"who":0,"mood":"...","action":"..."}],"speaker":null,"line":null,"prop":null,"sfx":null,"screen":null,"screenText":null,"count":null}],"caption":"...","hashtags":["..."]}'
+      : 'Answer as JSON: {"title":"...","logline":"...","mechanism":null,"characters":[{"name":"...","color":"...","accessory":"..."}],"beats":[{"setting":"...","time":"...","narration":"...","cast":[{"who":0,"mood":"...","action":"..."}],"speaker":null,"line":null,"prop":null,"sfx":null}],"caption":"...","hashtags":["..."]}',
   ]
     .filter((l) => l !== "")
     .join("\n");
@@ -168,6 +233,8 @@ export function editPrompt(story: Story, style: StoryStyle, issues: string[]): s
       : "Our rule checker found no problems.",
     style === "twist"
       ? "Check: beat 1 is a strange act with no context; a 'You see,' setup; one quoted mocking line; the sensible choice looks right, then fails; the mechanism is explained in plain words; it ends on the punch line with no cliffhanger. FACT CHECK: the 'mechanism' must be real and explained correctly. If it is wrong, made up, or you are not sure it is true, the verdict is 'rejected'."
+      : style === "gossip"
+      ? "Check: Pip is character 0; a cold open; it escalates one neighbor at a time; each neighbor does something only they would do; the ending twist lands; no 'part 2' or 'follow'; narration lines are short; it is actually funny; it doesn't lean on one repeated catchphrase; phone screens only where they fit; no real app, brand or person is named."
       : style === "hook"
       ? "Check: first line states the world's rule; first person; underdog; clear reveal far beyond everyone; shocked reactions; ends on a cliffhanger; every narration line is short and punchy."
       : "Check: clear setup, problem, turn and payoff; gentle and funny; no moral lecture.",
@@ -176,7 +243,7 @@ export function editPrompt(story: Story, style: StoryStyle, issues: string[]): s
     "If you can improve it with small edits, verdict 'fixed' and return the full corrected story (same shape, same rules).",
     "If it is unsafe or unusable, verdict 'rejected' with story null.",
     "List what you noticed in 'issues' (short phrases).",
-    vocab(),
+    vocab(style),
     "",
     "The story:",
     JSON.stringify(story),

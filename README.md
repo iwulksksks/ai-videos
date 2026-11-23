@@ -16,7 +16,7 @@ A story moves through the building in this order.
 | --- | --- | --- |
 | **Trend Lookout** (rooftop) | Juno | Reads the week's top posts from r/aivideo, r/animation, r/WritingPrompts and r/shortstories plus Google Trends (no accounts or keys), and the AI groups them into story themes with a "why it's trending" note. Checks at most every 12 hours; keeps the last report when offline. |
 | **Niche Scout** | Kit | Watches story channels like ours (you add them by link; free public feeds, plus optional YouTube search with an API key), ranks their recent videos by views per day, and passes the topics and hook styles that are working to the Research Desk. Inspiration only, never copied. |
-| **Producer's Office** | Bea | The boss. Autopilot switch, channel brief, stories per day, story style (Twist Tale, Hook or Cozy), look (2.5D or Flat 2D), story writer, a Studio setup checklist and the activity log. Picks the strongest waiting pitch. |
+| **Producer's Office** | Bea | The boss. Autopilot switch, channel brief, stories per day, story style (Twist Tale, Hook, Cozy or Town Gossip), look (2.5D or Flat 2D), story writer, a Studio setup checklist and the activity log. Picks the strongest waiting pitch. |
 | **Research Desk** | Pip | Turns a theme plus trends into 3 to 5 pitches (title, logline, genre, twist) on the idea board. Skips titles already used. Each pitch has a Produce button. |
 | **Script Room** | Quill | Writes the story as checked JSON: up to 3 characters (name, color, accessory) and beats with setting, time of day, narration, who's on screen with mood and action, and an optional spoken line. |
 | **QA Lab** | Vera | Rule checks always (beat count, lengths, valid characters, no real brands or people), then an AI edit pass. Verdict: approved, fixed or rejected. |
@@ -31,6 +31,7 @@ Stories go through one at a time: script, QA, voice, art, edit, ship. A failed s
 
 - **Twist Tale** (default): about 60 seconds, 18 to 24 fast beats. A hero does something that looks foolish, everyone laughs, the sensible choice fails, and a real, checkable trick or fact explains why the hero was right. One-word captions, close-ups of gears, levers and jars when explaining, sound effects on the payoff, and no outro so it loops. Ideas come from Wikipedia's "Did you know", r/todayilearned, r/explainlikeimfive and r/AskHistorians. The story is original; only the trick is real, and Vera rejects any story whose fact she isn't sure of.
 - **Hook**: 60 to 90 seconds, 12 to 18 quick beats, told in first person by an overlooked underdog. The first line states the world's rule; the big day; a reveal far beyond everyone; shocked reactions; a cliffhanger and a **Part 2?** card. Big Anton captions a few words at a time with one key word in yellow. Epic music.
+- **Town Gossip**: about 60 seconds of small-town comedy in Brickbury, a chunky toy-block town. Pip is in every episode; 2 to 4 neighbors rotate in from a pool of 12 and wear new colors each time. Each episode gets a different story type (went viral, rumor, new rule, contest, lost thing, gadget, secret, challenge, job swap, new neighbor, prank, everything stops), avoiding the last few used. Internet stories get code-drawn phone screens (a post, a view counter, comments, a wall of copycats, the "original sound" page) on a made-up app called Bloop. Lowercase one-word captions, quick cuts, and it stops on the punch line so it loops.
 - **Cozy**: 30 to 45 seconds, 5 to 8 beats, narrator box, speech bubbles, a title card and **The End**.
 
 ## The 2.5D look
@@ -68,7 +69,7 @@ npm run setup:voice     # Piper + voices (needs Python 3)
 npm run setup:ollama    # ollama pull qwen2.5:7b
 npm run dev             # http://localhost:3000
 npm run typecheck
-npm run render:sample   # renders a demo story without the app: npm run render:sample -- cozy flat
+npm run render:sample   # renders a demo story without the app: npm run render:sample -- cozy flat (or gossip)
 npm run studio          # Remotion Studio to preview the video component
 ```
 

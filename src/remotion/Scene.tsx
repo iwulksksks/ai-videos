@@ -4,10 +4,12 @@ import { AbsoluteFill, interpolate, useCurrentFrame, Easing } from "remotion";
 import type { Character, Look, StagedBeat, StoryStyle } from "../lib/story";
 import { HEIGHT, WIDTH } from "../lib/story";
 import { sceneLayers } from "./art/Backgrounds";
+import { BlockCharacterArt } from "./art/BlockCharacter";
 import { CharacterArt, motion } from "./art/Character";
 import { SKY, seeded } from "./art/palette";
 import { PropArt } from "./art/Props";
-import { HookCaption, NarratorBox, SingleWordCaption, SpeechBubble } from "./Text";
+import { PhoneScreen, PostOverlay } from "./Phone";
+import { GossipCaption, HookCaption, NarratorBox, SingleWordCaption, SpeechBubble } from "./Text";
 
 const FEET_Y = 1560;
 
@@ -30,7 +32,8 @@ function camera(beat: StagedBeat, frame: number, style: StoryStyle): CameraState
     case "close": {
       const lead = beat.cast[0];
       const cx = lead ? (0.5 - lead.x) * WIDTH : 0;
-      return { zoom: 1.45 + 0.08 * t + punch, x: cx * 1.2, y: 260, tilt: 0 };
+      // Toy-block people are taller, so frame them lower to keep the whole head in shot.
+      return { zoom: 1.45 + 0.08 * t + punch, x: cx * 1.2, y: style === "gossip" ? 470 : 260, tilt: 0 };
     }
     case "insert":
       return { zoom: 1 + 0.12 * t + punch, x: 0, y: 0, tilt: 0 };
@@ -127,10 +130,30 @@ export const Scene: React.FC<{
     ) : (
       beat.captions.map((c, i) =>
         frame >= c.from && frame < (i === beat.captions.length - 1 ? beat.durationInFrames : c.to) ? (
-          style === "twist" ? <SingleWordCaption key={i} chunk={c} frame={frame - c.from} low={beat.camera === "insert"} /> : <HookCaption key={i} chunk={c} frame={frame - c.from} />
+          style === "twist" ? (
+            <SingleWordCaption key={i} chunk={c} frame={frame - c.from} low={beat.camera === "insert"} />
+          ) : style === "gossip" ? (
+            <GossipCaption key={i} chunk={c} frame={frame - c.from} low={!!beat.screen && beat.screen !== "none"} />
+          ) : (
+            <HookCaption key={i} chunk={c} frame={frame - c.from} />
+          )
         ) : null,
       )
     );
+
+  const fullScreen = beat.screen && beat.screen !== "none" && beat.screen !== "post";
+  if (fullScreen) {
+    // A phone screen fills the frame (Town Gossip). A slow push keeps it alive.
+    const z = 1.04 + 0.05 * interpolate(frame, [0, beat.durationInFrames], [0, 1], { extrapolateRight: "clamp" });
+    return (
+      <AbsoluteFill style={{ backgroundColor: "#000", overflow: "hidden" }}>
+        <AbsoluteFill style={{ transform: `scale(${z})` }}>
+          <PhoneScreen screen={beat.screen!} frame={frame} total={beat.durationInFrames} text={beat.screenText ?? ""} count={beat.count ?? null} characters={characters} />
+        </AbsoluteFill>
+        {captions}
+      </AbsoluteFill>
+    );
+  }
 
   if (beat.camera === "insert" && beat.prop && beat.prop !== "none") {
     // A close-up of the mechanism: the set fades back, the object fills the frame.
@@ -166,6 +189,19 @@ export const Scene: React.FC<{
           const talking = speaking && c.who === beat.speaker && frame < beat.lineStartFrame + Math.max(beat.lineFrames, 24);
           return (
             <g key={i} transform={`translate(${c.x * WIDTH} ${FEET_Y + i * 6}) scale(${c.scale})`}>
+              {style === "gossip" ? (
+                <BlockCharacterArt
+                  character={ch}
+                  mood={c.mood}
+                  action={c.action}
+                  frame={frame}
+                  look={look}
+                  facing={c.facing}
+                  talking={talking}
+                  time={beat.time}
+                  seed={beat.seed + i * 31}
+                />
+              ) : (
               <CharacterArt
                 character={ch}
                 mood={c.mood}
@@ -178,6 +214,7 @@ export const Scene: React.FC<{
                 id={`${index}-${i}`}
                 seed={beat.seed + i * 31}
               />
+              )}
             </g>
           );
         })}
@@ -196,9 +233,12 @@ export const Scene: React.FC<{
             const sx = speakerCast.x * WIDTH + m.x * speakerCast.scale;
             return WIDTH / 2 + (sx - WIDTH / 2) * cam.zoom + cam.x;
           })()}
-          y={Math.max(260, FEET_Y - (360 * speakerCast.scale + 120) * cam.zoom + cam.y - (cam.zoom - 1) * 0)}
+          y={Math.max(260, FEET_Y - ((style === "gossip" ? 520 : 360) * speakerCast.scale + 120) * cam.zoom + cam.y)}
           style={style}
         />
+      )}
+      {beat.screen === "post" && (
+        <PostOverlay frame={frame} text={beat.screenText ?? ""} count={beat.count ?? null} poster={characters[beat.speaker ?? beat.cast[0]?.who ?? 0]} />
       )}
       {captions}
     </AbsoluteFill>

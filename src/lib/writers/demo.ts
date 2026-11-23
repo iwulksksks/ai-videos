@@ -1,6 +1,7 @@
 // Built-in demo writer. No AI at all: hand-written templates filled in with a little randomness,
 // so the studio always works even with no Ollama and no Claude.
 import type { Character, Pitch, ScoutInsights, Story, StoryStyle, Theme } from "../story";
+import { episodeCast } from "../town";
 
 function rng(seedText: string) {
   let h = 2166136261;
@@ -311,6 +312,142 @@ const TWIST_TALES: TwistTale[] = [
   },
 ];
 
+
+// ---------------- Town Gossip (Brickbury episodes) ----------------
+// Each demo episode is a different story shape with a different set of neighbors.
+
+type GossipEpisode = { pitch: Pitch; build: () => Story };
+const on = (who: number, mood: B["cast"][number]["mood"], action: B["cast"][number]["action"] = "idle") => ({ who, mood, action });
+const cast = (seed: string, ...names: string[]) => episodeCast(names, rng(seed));
+
+const GOSSIP_EPISODES: GossipEpisode[] = [
+  {
+    pitch: {
+      title: "Pip's Sneeze Broke the Town",
+      logline: "Pip's weird sneeze goes viral, the whole town copies it, and Pip ends up the only one who can't do it.",
+      genre: "comedy",
+      twist: "By the time everyone is famous for his sneeze, Pip catches a real cold and only manages a normal achoo.",
+      era: "viral",
+      skeptic: "Nana Pearl, Mayor Bigsby, Zoe, Chef Mo",
+    },
+    build: () => {
+      const [PIP, NANA, MAYOR, ZOE, MO] = [0, 1, 2, 3, 4];
+      return {
+        title: "Pip's Sneeze Broke the Town",
+        logline: "Pip's weird sneeze goes viral, the whole town copies it, and Pip ends up the only one who can't do it.",
+        mechanism: null,
+        characters: cast("sneeze", "Nana Pearl", "Mayor Bigsby", "Zoe", "Chef Mo"),
+        beats: [
+          beat("town", "day", "Pip sneezed, and it came out as blep.", [on(PIP, "surprised", "jump")], { speaker: PIP, line: "Blep!", sfx: "whoosh" }),
+          beat("bedroom", "day", "So he filmed himself doing it again.", [on(PIP, "excited", "idle")]),
+          beat("bedroom", "day", "He posted it before dinner.", [on(PIP, "happy", "idle")], { screen: "post", screenText: "my sneeze is broken", count: "200" }),
+          beat("bedroom", "night", "By morning, his phone would not stop buzzing.", [on(PIP, "surprised", "shake")]),
+          beat("bedroom", "day", "Twelve million views.", [], { screen: "views", screenText: "my sneeze is broken", count: "12M", sfx: "ding" }),
+          beat("town", "day", "Zoe did it at the bus stop. On purpose.", [on(ZOE, "excited", "jump"), on(PIP, "surprised")]),
+          beat("cafe", "day", "Chef Mo baked a bun that sneezed sugar.", [on(MO, "excited", "shake")], { sfx: "whoosh" }),
+          beat("plaza", "day", "Nana Pearl knitted matching sneeze sweaters.", [on(NANA, "happy", "idle")]),
+          beat("plaza", "day", "The comments were just one word.", [], { screen: "comments", screenText: "blep" }),
+          beat("plaza", "day", "Then the mayor got involved.", [on(MAYOR, "excited", "enter")]),
+          beat("plaza", "day", "He made Friday an official sneeze holiday.", [on(MAYOR, "excited", "jump")], { speaker: MAYOR, line: "Pepper for everyone!" }),
+          beat("plaza", "sunset", "There was a parade. There was a pepper cannon.", [on(NANA, "excited", "jump"), on(MAYOR, "excited", "jump"), on(ZOE, "excited", "jump")], { sfx: "crash" }),
+          beat("plaza", "sunset", "Everyone posted their own version.", [], { screen: "copycats", screenText: "blep", count: "3M" }),
+          beat("cafe", "sunset", "Nana's got forty million views.", [on(NANA, "excited", "jump"), on(PIP, "surprised")]),
+          beat("town", "sunset", "So Pip went to film a brand new one.", [on(PIP, "happy", "walk")]),
+          beat("town", "sunset", "But now he had a real cold.", [on(PIP, "sad", "shake")]),
+          beat("town", "sunset", "It came out as a normal achoo.", [on(PIP, "surprised", "jump")], { speaker: PIP, line: "Achoo." }),
+          beat("town", "night", "His original sat at one thousand views.", [], { screen: "sound", screenText: "blep", count: "1K" }),
+          beat("town", "night", "The comments said he was copying Nana.", [on(PIP, "sad")]),
+          beat("town", "night", "Bless you, Pip.", [on(PIP, "sad", "idle")]),
+        ],
+        caption: "he started it. he really did.",
+        hashtags: ["brickbury", "pip", "townGossip", "animation"],
+      };
+    },
+  },
+  {
+    pitch: {
+      title: "The Bakery Is Closing?",
+      logline: "Pip says Chef Mo's buns are to die for, and by noon the whole town believes the bakery is dying.",
+      genre: "comedy",
+      twist: "The fake goodbye makes the bakery so busy that Mo keeps 'closing forever' every Friday, and Pip can't get a bun.",
+      era: "rumor",
+      skeptic: "Chef Mo, Officer Dot, Mr. Fenn, Mrs. Plum",
+    },
+    build: () => {
+      const [PIP, MO, DOT, FENN, PLUM] = [0, 1, 2, 3, 4];
+      return {
+        title: "The Bakery Is Closing?",
+        logline: "Pip says Chef Mo's buns are to die for, and by noon the whole town believes the bakery is dying.",
+        mechanism: null,
+        characters: cast("bakery", "Chef Mo", "Officer Dot", "Mr. Fenn", "Mrs. Plum"),
+        beats: [
+          beat("plaza", "sunset", "The whole town was crying outside a bakery.", [on(PLUM, "sad", "shake"), on(FENN, "sad"), on(DOT, "sad")]),
+          beat("cafe", "day", "That morning, Pip said Mo's buns were to die for.", [on(PIP, "excited", "jump"), on(MO, "happy")]),
+          beat("cafe", "day", "Officer Dot only heard one word.", [on(DOT, "surprised", "enter")], { sfx: "ding" }),
+          beat("town", "day", "She told Mr. Fenn the bakery was dying.", [on(DOT, "scared", "shake"), on(FENN, "surprised")], { speaker: DOT, line: "The bakery is dying!" }),
+          beat("town", "day", "Mr. Fenn told every mailbox on his route.", [on(FENN, "scared", "walk")]),
+          beat("market", "day", "At the salon, Mrs. Plum added a few details.", [on(PLUM, "excited")], { speaker: PLUM, line: "I heard it first." }),
+          beat("market", "day", "Now Mo was moving to the moon.", [on(PLUM, "thinking"), on(FENN, "surprised")]),
+          beat("town", "day", "The town chat went into mourning.", [], { screen: "comments", screenText: "rip bakery" }),
+          beat("plaza", "sunset", "Somebody brought candles. Somebody brought a trumpet.", [on(FENN, "sad"), on(DOT, "sad"), on(PLUM, "sad")], { sfx: "whoosh" }),
+          beat("cafe", "sunset", "Everyone lined up to buy one last bun.", [on(PLUM, "sad", "walk"), on(FENN, "sad", "walk")]),
+          beat("cafe", "sunset", "Mo sold out in eleven minutes.", [on(MO, "surprised", "jump")], { sfx: "ding" }),
+          beat("cafe", "sunset", "He baked more. They sold out again.", [on(MO, "excited", "shake")]),
+          beat("cafe", "night", "Pip finally explained what he meant.", [on(PIP, "thinking"), on(MO, "thinking")]),
+          beat("cafe", "night", "Mo looked at the line around the block.", [on(MO, "thinking")]),
+          beat("cafe", "night", "Then he hung a new sign.", [on(MO, "happy", "idle")]),
+          beat("cafe", "night", "Closing forever. Every Friday.", [on(MO, "excited", "jump"), on(PIP, "surprised")]),
+          beat("town", "night", "Pip just wanted a bun.", [on(PIP, "sad", "walk")]),
+          beat("town", "night", "The line was too long.", [on(PIP, "sad")]),
+        ],
+        caption: "it was a compliment",
+        hashtags: ["brickbury", "pip", "townGossip", "animation"],
+      };
+    },
+  },
+  {
+    pitch: {
+      title: "Lulu Lost Mr. Waffles",
+      logline: "Pip's little sister loses her stuffed bunny and the whole town turns the search into a full operation.",
+      genre: "comedy",
+      twist: "The bunny was on Pip's head the whole time, under his cap.",
+      era: "lost",
+      skeptic: "Lulu, Coach Rhonda, Bolt",
+    },
+    build: () => {
+      const [PIP, LULU, RHONDA, BOLT] = [0, 1, 2, 3];
+      return {
+        title: "Lulu Lost Mr. Waffles",
+        logline: "Pip's little sister loses her stuffed bunny and the whole town turns the search into a full operation.",
+        mechanism: null,
+        characters: cast("waffles", "Lulu", "Coach Rhonda", "Bolt"),
+        beats: [
+          beat("forest", "day", "A whistle, a drone and forty people in a bush.", [on(RHONDA, "angry", "shake"), on(BOLT, "excited")], { sfx: "whoosh" }),
+          beat("bedroom", "day", "It started with one stuffed bunny.", [on(LULU, "sad", "shake")]),
+          beat("bedroom", "day", "Mr. Waffles was gone.", [on(LULU, "scared", "shake"), on(PIP, "surprised")], { speaker: LULU, line: "Find him. Now." }),
+          beat("town", "day", "Pip asked Coach Rhonda for help.", [on(PIP, "thinking", "walk"), on(RHONDA, "happy")]),
+          beat("town", "day", "She turned it into a training drill.", [on(RHONDA, "excited", "jump")], { speaker: RHONDA, line: "Laps till we find him!" }),
+          beat("plaza", "day", "Half the town was jogging in circles.", [on(RHONDA, "angry", "walk"), on(PIP, "scared", "walk")]),
+          beat("workshop", "day", "Bolt built a bunny-finding drone.", [on(BOLT, "excited", "idle")], { sfx: "ding" }),
+          beat("workshop", "day", "It found four cats and a mop.", [on(BOLT, "surprised", "shake")]),
+          beat("forest", "day", "They searched the park.", [on(PIP, "thinking", "walk"), on(BOLT, "thinking")]),
+          beat("beach", "sunset", "They searched the beach.", [on(RHONDA, "angry", "walk"), on(PIP, "sad", "walk")]),
+          beat("harbor", "sunset", "Coach Rhonda searched a boat that wasn't hers.", [on(RHONDA, "excited", "jump")], { sfx: "crash" }),
+          beat("town", "sunset", "Bolt's drone flew into the town clock.", [on(BOLT, "scared", "shake")], { sfx: "crash" }),
+          beat("bedroom", "night", "Pip came home and told Lulu the truth.", [on(PIP, "sad"), on(LULU, "sad")]),
+          beat("bedroom", "night", "Mr. Waffles might be gone for good.", [on(PIP, "sad", "idle")]),
+          beat("bedroom", "night", "Lulu stared at him.", [on(LULU, "thinking")]),
+          beat("bedroom", "night", "Then she pointed at his cap.", [on(LULU, "angry"), on(PIP, "surprised")], { speaker: LULU, line: "Your hat has ears." }),
+          beat("bedroom", "night", "He had been wearing Mr. Waffles all day.", [on(PIP, "scared", "shake")]),
+          beat("bedroom", "night", "Nobody tell Coach Rhonda.", [on(PIP, "scared"), on(LULU, "happy")]),
+        ],
+        caption: "the whole town. all day.",
+        hashtags: ["brickbury", "pip", "townGossip", "animation"],
+      };
+    },
+  },
+];
+
 // ---------------- Public demo API ----------------
 
 /** No-AI fallback for the Niche Scout: simple counting over the top titles. */
@@ -354,6 +491,8 @@ export function demoPitches(style: StoryStyle, usedTitles: string[]): Pitch[] {
   const all: Pitch[] =
     style === "twist"
       ? TWIST_TALES.map((t) => t.pitch)
+      : style === "gossip"
+      ? GOSSIP_EPISODES.map((e) => e.pitch)
       : style === "hook"
       ? HOOK_WORLDS.map((w) => ({
           title: w.title,
@@ -376,6 +515,10 @@ export function demoStory(pitch: Pitch, style: StoryStyle): Story {
     const tale = TWIST_TALES.find((t) => t.pitch.title.toLowerCase() === base) ?? pick(r, TWIST_TALES);
     const s = tale.build(r);
     return { ...s, title: pitch.title.slice(0, 80), caption: pitch.title.slice(0, 80) };
+  }
+  if (style === "gossip") {
+    const ep = GOSSIP_EPISODES.find((e) => e.pitch.title.toLowerCase() === base) ?? pick(r, GOSSIP_EPISODES);
+    return { ...ep.build(), title: pitch.title.slice(0, 80) };
   }
   if (style === "hook") {
     const world = HOOK_WORLDS.find((w) => w.title.toLowerCase() === base) ?? pick(r, HOOK_WORLDS);

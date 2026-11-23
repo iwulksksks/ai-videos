@@ -150,6 +150,85 @@ function Banner({ x, y, color, time }: { x: number; y: number; color: string; ti
   );
 }
 
+
+// ---------- Brickbury (Town Gossip): chunky toy-block buildings ----------
+
+function BlockHouse({ x, y, w, h, wall, roof, time, seed }: { x: number; y: number; w: number; h: number; wall: string; roof: string; time: TimeOfDay; seed: number }) {
+  const r = seeded(seed);
+  const d = 40;
+  const lit = time === "night";
+  const win = (wx: number, wy: number) => (
+    <g key={`${wx}-${wy}`}>
+      <rect x={wx - 6} y={wy - 6} width={62} height={72} fill={tod("#fdf6e8", time)} />
+      <rect x={wx} y={wy} width={50} height={60} fill={lit ? (r() > 0.35 ? "#ffd56a" : "#2c3560") : tod("#9fd3ff", time)} />
+      <rect x={wx + 22} y={wy} width={6} height={60} fill={tod("#fdf6e8", time)} />
+    </g>
+  );
+  const cols = Math.max(1, Math.floor((w - 40) / 90));
+  const rows = Math.max(1, Math.floor((h - 150) / 110));
+  return (
+    <g>
+      {/* side wall */}
+      <path d={`M ${x + w} ${y - h} l ${d} ${-d * 0.6} l 0 ${h} l ${-d} ${d * 0.6} Z`} fill={tod(shade(wall, -0.3), time)} />
+      {/* front wall */}
+      <rect x={x} y={y - h} width={w} height={h} fill={tod(wall, time)} />
+      {/* roof: a box with a lit top */}
+      <path d={`M ${x - 20} ${y - h} L ${x + w / 2} ${y - h - w * 0.36} L ${x + w + 20} ${y - h} Z`} fill={tod(roof, time)} />
+      <path d={`M ${x + w / 2} ${y - h - w * 0.36} l ${d} ${-d * 0.6} L ${x + w + 20 + d} ${y - h - d * 0.6} L ${x + w + 20} ${y - h} Z`} fill={tod(shade(roof, -0.25), time)} />
+      {Array.from({ length: rows }, (_, j) => Array.from({ length: cols }, (_, i) => win(x + 30 + i * ((w - 60) / cols) + ((w - 60) / cols - 50) / 2, y - h + 40 + j * 110)))}
+      {/* door */}
+      <rect x={x + w / 2 - 34} y={y - 120} width={68} height={120} fill={tod(shade(roof, -0.2), time)} />
+      <circle cx={x + w / 2 + 20} cy={y - 60} r={6} fill="#ffd23f" />
+    </g>
+  );
+}
+
+function Bunting({ y, sag, time, from = L, to = R }: { y: number; sag: number; time: TimeOfDay; from?: number; to?: number }) {
+  const n = Math.floor((to - from) / 70);
+  const cols = ["#ff5a5a", "#ffd23f", "#4f9dff", "#5ccf6b", "#a77bff", "#ff9a3c"];
+  return (
+    <g>
+      <path d={`M ${from} ${y} Q ${(from + to) / 2} ${y + sag * 2} ${to} ${y}`} stroke="#444" strokeWidth={4} fill="none" />
+      {Array.from({ length: n }, (_, i) => {
+        const t = (i + 0.5) / n;
+        const px = from + (to - from) * t;
+        const py = y + sag * 4 * t * (1 - t) * 1;
+        return <rect key={i} x={px - 18} y={py} width={36} height={40} fill={tod(cols[i % cols.length], time)} />;
+      })}
+    </g>
+  );
+}
+
+function LampPost({ x, y, time, h = 520 }: { x: number; y: number; time: TimeOfDay; h?: number }) {
+  return (
+    <g>
+      <rect x={x - 12} y={y - h} width={24} height={h} fill={tod("#3b3f4c", time)} />
+      <rect x={x - 34} y={y - h - 40} width={68} height={48} rx={8} fill={time === "night" ? "#ffe9a0" : tod("#f4f4f4", time)} stroke={tod("#3b3f4c", time)} strokeWidth={8} />
+      {time === "night" && <circle cx={x} cy={y - h - 16} r={120} fill="#ffe9a0" opacity={0.18} />}
+    </g>
+  );
+}
+
+function BlockTree({ x, y, s, time }: { x: number; y: number; s: number; time: TimeOfDay }) {
+  return (
+    <g transform={`translate(${x} ${y}) scale(${s})`}>
+      <rect x={-16} y={-110} width={32} height={110} fill={tod("#7a5236", time)} />
+      <rect x={-80} y={-260} width={160} height={160} rx={12} fill={tod("#3fae5a", time)} />
+      <path d="M 80 -260 l 30 -18 l 0 160 l -30 18 Z" fill={tod("#2d8a45", time)} />
+      <path d="M -80 -260 l 30 -18 l 160 0 l -30 18 Z" fill={tod("#64c878", time)} />
+    </g>
+  );
+}
+
+const TOWN_HOUSES = [
+  { wall: "#f2b8c6", roof: "#8a3b55" },
+  { wall: "#9ec9f2", roof: "#2f4f8a" },
+  { wall: "#fbe08a", roof: "#a0522d" },
+  { wall: "#b8e6b0", roof: "#3f7a46" },
+  { wall: "#f5c99b", roof: "#7a4a2a" },
+  { wall: "#d6c4f2", roof: "#5a3f8a" },
+];
+
 export function sceneLayers(setting: Setting, time: TimeOfDay, id: string): Layers {
   switch (setting) {
     case "forest":
@@ -704,6 +783,87 @@ export function sceneLayers(setting: Setting, time: TimeOfDay, id: string): Laye
             {[0, 1, 2].map((i) => (
               <circle key={i} cx={-60 + i * 90} cy={1640} r={46} fill={tod(["#ff5a5a", "#ffd23f", "#ff9a3c"][i], time)} />
             ))}
+          </g>
+        ),
+      };
+    case "town":
+      return {
+        far: (
+          <g>
+            <Sky time={time} id={id} />
+            <Hills time={time} y={900} color="#8fcf8a" amp={90} seed={5} />
+            {[-380, -60, 260, 580, 900, 1220].map((x, i) => (
+              <BlockHouse key={x} x={x} y={1150} w={260} h={300 + (i % 3) * 70} wall={TOWN_HOUSES[i].wall} roof={TOWN_HOUSES[i].roof} time={time} seed={i + 3} />
+            ))}
+            <Bunting y={560} sag={40} time={time} />
+          </g>
+        ),
+        mid: (
+          <g>
+            <Floor time={time} color="#c9c4bb" />
+            <rect x={L} y={1330} width={W} height={1100} fill={tod("#4a4d57", time)} />
+            {Array.from({ length: 10 }, (_, i) => (
+              <rect key={i} x={L + i * 210} y={1560} width={120} height={20} fill={tod("#f2d14a", time)} />
+            ))}
+            <BlockTree x={-150} y={1250} s={1} time={time} />
+            <BlockTree x={1180} y={1240} s={0.95} time={time} />
+          </g>
+        ),
+        near: (
+          <g>
+            <LampPost x={-20} y={2000} time={time} h={1100} />
+            <g transform="translate(980 1960)">
+              <path d="M -50 0 L -20 -110 L 20 -110 L 50 0 Z" fill="#ff8a2a" />
+              <rect x={-40} y={-70} width={80} height={16} fill="#fff" />
+            </g>
+          </g>
+        ),
+      };
+    case "plaza":
+      return {
+        far: (
+          <g>
+            <Sky time={time} id={id} />
+            <Hills time={time} y={880} color="#86c47f" amp={70} seed={9} />
+            <BlockHouse x={-340} y={1140} w={300} h={380} wall={TOWN_HOUSES[4].wall} roof={TOWN_HOUSES[4].roof} time={time} seed={21} />
+            {/* town hall with a clock tower */}
+            <g>
+              <BlockHouse x={250} y={1140} w={580} h={420} wall="#efe6d6" roof="#b33b3b" time={time} seed={22} />
+              <rect x={470} y={440} width={140} height={300} fill={tod("#efe6d6", time)} />
+              <path d="M 610 440 l 40 -24 l 0 300 l -40 24 Z" fill={tod("#c9bfae", time)} />
+              <circle cx={540} cy={540} r={50} fill={tod("#ffffff", time)} stroke={tod("#3b3f4c", time)} strokeWidth={8} />
+              <line x1={540} y1={540} x2={540} y2={505} stroke="#3b3f4c" strokeWidth={6} />
+              <line x1={540} y1={540} x2={565} y2={550} stroke="#3b3f4c" strokeWidth={6} />
+              <path d="M 460 440 L 540 360 L 620 440 Z" fill={tod("#b33b3b", time)} />
+            </g>
+            <BlockHouse x={1060} y={1140} w={300} h={340} wall={TOWN_HOUSES[1].wall} roof={TOWN_HOUSES[1].roof} time={time} seed={23} />
+            <Bunting y={520} sag={50} time={time} from={-300} to={460} />
+            <Bunting y={520} sag={50} time={time} from={620} to={1400} />
+          </g>
+        ),
+        mid: (
+          <g>
+            <Floor time={time} color="#d8cdb8" />
+            {Array.from({ length: 8 }, (_, i) => (
+              <line key={i} x1={L} y1={1240 + i * 110} x2={R} y2={1240 + i * 110} stroke={tod("#c2b59c", time)} strokeWidth={6} />
+            ))}
+            {/* fountain */}
+            <g transform="translate(540 1300)">
+              <rect x={-220} y={-60} width={440} height={80} rx={10} fill={tod("#b9b2a6", time)} />
+              <rect x={-200} y={-60} width={400} height={24} fill={tod("#6fc3ff", time)} />
+              <rect x={-30} y={-200} width={60} height={150} fill={tod("#b9b2a6", time)} />
+              <path d="M 0 -200 q -60 -40 -110 60 M 0 -200 q 60 -40 110 60" stroke={tod("#9fdcff", time)} strokeWidth={10} fill="none" opacity={0.85} />
+            </g>
+          </g>
+        ),
+        near: (
+          <g>
+            <BlockTree x={-120} y={2000} s={1.6} time={time} />
+            <g transform="translate(1000 1980)">
+              <rect x={-120} y={-80} width={240} height={24} rx={6} fill={tod("#8a5a3b", time)} />
+              <rect x={-110} y={-56} width={16} height={56} fill={tod("#3b3f4c", time)} />
+              <rect x={94} y={-56} width={16} height={56} fill={tod("#3b3f4c", time)} />
+            </g>
           </g>
         ),
       };

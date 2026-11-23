@@ -5,7 +5,7 @@ import type { VideoProps } from "../lib/story";
 import { Scene } from "./Scene";
 import { EndCard, TitleCard } from "./Text";
 
-const LEVELS = { hook: [0.42, 0.1], cozy: [0.38, 0.1], twist: [0.22, 0.05] } as const; // [full, under voices]
+const LEVELS = { hook: [0.42, 0.1], cozy: [0.38, 0.1], twist: [0.22, 0.05], gossip: [0.26, 0.06] } as const; // [full, under voices]
 const RAMP = 8;
 
 function speakingWindows(p: VideoProps): [number, number][] {

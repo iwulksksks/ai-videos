@@ -59,7 +59,7 @@ export function captionChunks(text: string, frames: number, style: StoryStyle, n
   if (!ws.length) return [];
   const highlight = keyWord(text, names);
   if (style === "cozy") return [{ text, highlight, from: 0, to: frames }];
-  if (style === "twist") {
+  if (style === "twist" || style === "gossip") {
     // One big word at a time, timed by its length.
     const weights = ws.map((w) => w.length + 2);
     const total = weights.reduce((a, b) => a + b, 0);
@@ -109,6 +109,12 @@ const REACTION_MOODS = new Set(["surprised", "scared", "excited", "angry"]);
 function chooseCamera(beat: Beat, i: number, style: StoryStyle, total: number): Camera {
   const reaction = beat.cast.some((c) => REACTION_MOODS.has(c.mood));
   if (beat.prop && beat.prop !== "none") return "insert";
+  if (style === "gossip") {
+    if (beat.screen && beat.screen !== "none" && beat.screen !== "post") return "still";
+    if (i === 0) return "close"; // open on a face
+    if (reaction && beat.cast.length <= 2) return "close";
+    return (["push", "close", "pan-right", "still", "pan-left", "close"] as const)[i % 6];
+  }
   if (style === "twist") {
     if (i === 0) return "close"; // the strange act, up close
     if (reaction && beat.cast.length <= 2) return "close";
@@ -139,15 +145,17 @@ function placeCast(cast: CastMember[], characters: Character[], camera: Camera):
 
 export function stageStory(story: Story, style: StoryStyle, audio: BeatAudio[]): StagedPlan {
   const names = story.characters.map((c) => c.name);
-  const pad = style === "cozy" ? 0.7 : style === "hook" ? 0.25 : 0.15;
-  const minSeconds = style === "cozy" ? 3.5 : style === "hook" ? 2.2 : 1.8;
+  const pad = style === "cozy" ? 0.7 : style === "hook" ? 0.25 : style === "gossip" ? 0.1 : 0.15;
+  const minSeconds = style === "cozy" ? 3.5 : style === "hook" ? 2.2 : style === "gossip" ? 1.5 : 1.8;
   const beats = story.beats.map((beat, i) => {
     const a = audio[i] ?? { narrationFile: null, narrationSeconds: null, lineFile: null, lineSeconds: null };
     const narrSec = a.narrationSeconds ?? readingSeconds(beat.narration);
     const hasLine = beat.speaker != null && !!beat.line;
     const lineSec = hasLine ? (a.lineSeconds ?? readingSeconds(beat.line!)) : 0;
     const gap = hasLine ? 0.15 : 0;
-    const seconds = Math.max(minSeconds, narrSec + gap + lineSec + pad);
+    // Phone screens need a moment to read, even with short narration.
+    const screenMin = style === "gossip" && beat.screen && beat.screen !== "none" && beat.screen !== "post" ? 2.4 : 0;
+    const seconds = Math.max(minSeconds, screenMin, narrSec + gap + lineSec + pad);
     const durationInFrames = Math.round(seconds * FPS);
     const narrationFrames = Math.round(narrSec * FPS);
     const camera = chooseCamera(beat, i, style, story.beats.length);
@@ -167,8 +175,8 @@ export function stageStory(story: Story, style: StoryStyle, audio: BeatAudio[]):
     };
   });
   const introFrames = style === "cozy" ? Math.round(2.5 * FPS) : 0;
-  // Twist Tale stops dead on the punch line so the video loops.
-  const outroFrames = style === "twist" ? 0 : Math.round((style === "hook" ? 2.2 : 2.5) * FPS);
+  // Twist Tale and Town Gossip stop dead on the punch line so the video loops.
+  const outroFrames = style === "twist" || style === "gossip" ? 0 : Math.round((style === "hook" ? 2.2 : 2.5) * FPS);
   const totalFrames = introFrames + beats.reduce((s, b) => s + b.durationInFrames, 0) + outroFrames;
   return { beats, introFrames, outroFrames, totalFrames };
 }
