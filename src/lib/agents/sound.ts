@@ -1,17 +1,19 @@
 // Sound Booth (Echo): records the narrator and the characters with Piper, then makes the music.
 import fs from "node:fs";
 import path from "node:path";
-import { composeMusic } from "../audio/compose";
+import { composeMusic, composeSfx } from "../audio/compose";
 import { speak, voiceReady } from "../audio/piper";
 import { wavDurationSeconds } from "../audio/wav";
 import { config } from "../config";
 import type { MusicMood, Story, StoryStyle } from "../story";
-import type { BeatAudio } from "./art";
+import type { BeatAudio, StagedPlan } from "./art";
+import { FPS } from "../story";
 
 export async function recordVoices(
   story: Story,
   jobDir: string,
   onLine?: (done: number, total: number) => void,
+  style: StoryStyle = "hook",
 ): Promise<{ audio: BeatAudio[]; voiced: boolean; problem: string | null }> {
   const empty = story.beats.map(() => ({ narrationFile: null, narrationSeconds: null, lineFile: null, lineSeconds: null }));
   if (!config.voiceOn) return { audio: empty, voiced: false, problem: "Voiceover is switched off (REELHOUSE_VOICE=0)." };
@@ -22,13 +24,16 @@ export async function recordVoices(
   for (let i = 0; i < story.beats.length; i++) {
     const b = story.beats[i];
     const narrationFile = `beat-${String(i + 1).padStart(2, "0")}-narration.wav`;
-    await speak(b.narration, path.join(jobDir, narrationFile), "narrator");
+    // Twist Tale: one brisk narrator (about 3 words a second) reads everything.
+    const twist = style === "twist";
+    await speak(b.narration, path.join(jobDir, narrationFile), "narrator", twist ? { lengthScale: 0.9 } : {});
     onLine?.(++done, total);
     let lineFile: string | null = null;
     let lineSeconds: number | null = null;
     if (b.speaker != null && b.line) {
       lineFile = `beat-${String(i + 1).padStart(2, "0")}-line.wav`;
-      await speak(b.line, path.join(jobDir, lineFile), { character: b.speaker });
+      // In Twist Tale the narrator also reads quoted lines, a touch slower for a different tone.
+      await speak(b.line, path.join(jobDir, lineFile), twist ? "narrator" : { character: b.speaker }, twist ? { lengthScale: 1.05 } : {});
       lineSeconds = wavDurationSeconds(path.join(jobDir, lineFile));
       onLine?.(++done, total);
     }
@@ -39,6 +44,7 @@ export async function recordVoices(
 
 export function pickMood(story: Story, style: StoryStyle): MusicMood {
   if (style === "hook") return "epic";
+  if (style === "twist") return "curious";
   const text = `${story.title} ${story.logline} ${story.beats.map((b) => b.narration).join(" ")}`.toLowerCase();
   const night = story.beats.filter((b) => b.time === "night" || b.setting === "space").length;
   if (/(mystery|secret|strange|shadow|whisper|clue|missing)/.test(text)) return "mystery";
@@ -71,4 +77,17 @@ export function makeMusic(opts: { mood: MusicMood; seconds: number; seed: string
   }
   composeMusic({ mood: opts.mood, seconds: opts.seconds, seed: opts.seed, outFile: path.join(opts.jobDir, "music.wav") });
   return { file: "music.wav", source: `an original ${opts.mood} tune` };
+}
+
+/** Sound effects track: one effect at the start of each beat that asks for one. */
+export function makeSfx(plan: StagedPlan, jobDir: string): string | null {
+  const events: { time: number; kind: NonNullable<StagedPlan["beats"][number]["sfx"]> }[] = [];
+  let at = plan.introFrames;
+  for (const b of plan.beats) {
+    if (b.sfx && b.sfx !== "none") events.push({ time: at / FPS, kind: b.sfx });
+    at += b.durationInFrames;
+  }
+  if (!events.length || !config.musicOn) return null;
+  composeSfx({ events, seconds: plan.totalFrames / FPS, outFile: path.join(jobDir, "sfx.wav") });
+  return "sfx.wav";
 }

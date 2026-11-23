@@ -1,4 +1,4 @@
-// npm run render:sample [hook|cozy] [2.5d|flat]
+// npm run render:sample [twist|hook|cozy] [2.5d|flat]
 // Renders a demo story end to end without the web app, to prove the video pipeline works.
 import fs from "node:fs";
 import path from "node:path";
@@ -12,14 +12,15 @@ try {
 async function main() {
   const { demoPitches, demoStory } = await import("../src/lib/writers/demo");
   const { ruleCheck } = await import("../src/lib/agents/qa");
-  const { recordVoices, pickMood, makeMusic } = await import("../src/lib/agents/sound");
+  const { recordVoices, pickMood, makeMusic, makeSfx } = await import("../src/lib/agents/sound");
   const { stageStory } = await import("../src/lib/agents/art");
   const { renderVideo } = await import("../src/lib/agents/edit");
   const { shipStory, outputFolder } = await import("../src/lib/agents/ship");
   const { config } = await import("../src/lib/config");
   const { FPS } = await import("../src/lib/story");
 
-  const style = process.argv[2] === "cozy" ? "cozy" : "hook";
+  const arg = process.argv[2];
+  const style = arg === "cozy" || arg === "hook" ? arg : "twist";
   const look = process.argv[3] === "flat" ? "flat" : "2.5d";
   const pitch = demoPitches(style, [])[0];
   console.log(`Script Room: writing "${pitch.title}" (${style}, ${look})`);
@@ -31,7 +32,7 @@ async function main() {
   fs.rmSync(jobDir, { recursive: true, force: true });
   fs.mkdirSync(jobDir, { recursive: true });
 
-  const voices = await recordVoices(checked.story, jobDir, (d, t) => process.stdout.write(`\rSound Booth: recording ${d}/${t}`));
+  const voices = await recordVoices(checked.story, jobDir, (d, t) => process.stdout.write(`\rSound Booth: recording ${d}/${t}`), style);
   console.log(voices.voiced ? "\nSound Booth: voices recorded" : `Sound Booth: no voices. ${voices.problem}`);
 
   const plan = stageStory(checked.story, style, voices.audio);
@@ -40,7 +41,8 @@ async function main() {
 
   const mood = pickMood(checked.story, style);
   const music = makeMusic({ mood, seconds, seed: checked.story.title, jobDir });
-  console.log(`Sound Booth: music is ${music.source}`);
+  const sfxFile = makeSfx(plan, jobDir);
+  console.log(`Sound Booth: music is ${music.source}${sfxFile ? ", with sound effects" : ""}`);
 
   const rendered = path.join(jobDir, "render.mp4");
   const started = Date.now();
@@ -51,6 +53,7 @@ async function main() {
     look,
     plan,
     musicFile: music.file,
+    sfxFile,
     musicMood: mood,
     outFile: rendered,
     onProgress: (p) => process.stdout.write(`\rEdit Bay: rendering ${Math.round(p * 100)}%   `),

@@ -35,6 +35,20 @@ async function googleTrends(url: string): Promise<string[]> {
   return [...xml.matchAll(/<item>[\s\S]*?<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/g)].map((m) => m[1].trim()).slice(0, 20);
 }
 
+/** Wikipedia's "Did you know..." feed: short surprising true facts. */
+async function wikipediaDyk(): Promise<string[]> {
+  const url = "https://en.wikipedia.org/w/api.php?action=featuredfeed&feed=didyouknow&feedformat=atom";
+  const res = await fetch(url, { headers: { "user-agent": UA }, signal: AbortSignal.timeout(10000) });
+  if (!res.ok) throw new Error(`Wikipedia answered ${res.status}`);
+  const xml = await res.text();
+  const latest = /<entry>[\s\S]*?<summary[^>]*>([\s\S]*?)<\/summary>/.exec(xml)?.[1] ?? "";
+  const html = latest.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&amp;/g, "&");
+  return [...html.matchAll(/<li>([\s\S]*?)<\/li>/g)]
+    .map((m) => m[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim())
+    .filter((t) => t.length > 20)
+    .slice(0, 12);
+}
+
 export function latestReport(): { report: TrendReport; created_at: string } | null {
   const row = getDb().prepare("SELECT report_json, created_at FROM trends ORDER BY id DESC LIMIT 1").get() as
     | { report_json: string; created_at: string }
@@ -53,14 +67,22 @@ export async function scoutTrends(force = false): Promise<TrendReport | null> {
   if (!force && !trendsDue()) return latestReport()?.report ?? null;
   log("trends", "Juno is climbing to the roof to check what's popular this week.");
   const sources: TrendReport["sources"] = [];
-  for (const sub of config.subreddits) {
+  const twist = getSettings().style === "twist";
+  if (twist && config.wikipediaDyk) {
+    try {
+      sources.push({ name: "Wikipedia: Did you know", items: await wikipediaDyk() });
+    } catch (e) {
+      log("trends", `Couldn't read Wikipedia: ${(e as Error).message}`, "warn");
+    }
+  }
+  for (const sub of twist ? config.factSubreddits : config.subreddits) {
     try {
       sources.push({ name: `r/${sub}`, items: await reddit(sub) });
     } catch (e) {
       log("trends", `Couldn't read r/${sub}: ${(e as Error).message}`, "warn");
     }
   }
-  if (config.trendsRss) {
+  if (config.trendsRss && !twist) {
     try {
       sources.push({ name: "Google Trends", items: await googleTrends(config.trendsRss) });
     } catch (e) {

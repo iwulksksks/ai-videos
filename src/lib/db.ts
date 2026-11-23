@@ -55,6 +55,9 @@ export function getDb(): Database.Database {
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
   `);
+  // Columns added later (Twist Tale pitches).
+  const cols = (db.prepare("PRAGMA table_info(ideas)").all() as { name: string }[]).map((c) => c.name);
+  for (const c of ["mechanism", "era", "skeptic"]) if (!cols.includes(c)) db.exec(`ALTER TABLE ideas ADD COLUMN ${c} TEXT`);
   return db;
 }
 

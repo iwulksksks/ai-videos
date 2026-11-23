@@ -5,7 +5,7 @@ import { stageStory, type StagedPlan } from "./agents/art";
 import { renderVideo } from "./agents/edit";
 import { runQa } from "./agents/qa";
 import { shipStory, outputFolder } from "./agents/ship";
-import { makeMusic, pickMood, recordVoices } from "./agents/sound";
+import { makeMusic, makeSfx, pickMood, recordVoices } from "./agents/sound";
 import { latestReport, scoutTrends } from "./agents/trends";
 import { postToTikTok, tiktokAutoPost } from "./tiktok";
 import { config } from "./config";
@@ -42,6 +42,9 @@ export type IdeaRow = {
   genre: string;
   twist: string;
   theme: string | null;
+  mechanism: string | null;
+  era: string | null;
+  skeptic: string | null;
   status: "waiting" | "used";
   created_at: string;
 };
@@ -89,8 +92,8 @@ export async function pitchIdeas(opts: { theme?: Theme | null; count?: number } 
   const res = await writePitches({ theme, trends, brief: s.brief, usedTitles: used, style: s.style, count: opts.count ?? 4 });
   const usedLower = new Set(used.map((t) => t.toLowerCase()));
   const fresh = res.value.filter((p) => !usedLower.has(p.title.toLowerCase()));
-  const ins = getDb().prepare("INSERT INTO ideas (title, logline, genre, twist, theme) VALUES (?, ?, ?, ?, ?)");
-  for (const p of fresh) ins.run(p.title, p.logline, p.genre, p.twist, theme?.theme ?? null);
+  const ins = getDb().prepare("INSERT INTO ideas (title, logline, genre, twist, theme, mechanism, era, skeptic) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+  for (const p of fresh) ins.run(p.title, p.logline, p.genre, p.twist, theme?.theme ?? null, p.mechanism ?? null, p.era ?? null, p.skeptic ?? null);
   log("research", `Pitched ${fresh.length} new idea${fresh.length === 1 ? "" : "s"} (${res.engine}).`);
   return waitingIdeas();
 }
@@ -107,6 +110,8 @@ export function pickBestIdea(): IdeaRow | null {
     s += i.twist.length > 20 ? 2 : 0;
     s += /\d/.test(i.twist + i.title) ? 1 : 0;
     if (style === "hook" && /(power|mark|rank|chosen|strongest|weakest|ceremony|secret|only)/i.test(i.logline + i.twist)) s += 3;
+    if (style === "twist") s += i.mechanism ? 4 : -4;
+    if (style === "twist" && /^(why|how|the)\b/i.test(i.title)) s += 2;
     if (style === "cozy" && /(friend|tiny|little|cozy|home|cafe|warm)/i.test(i.logline + i.twist)) s += 3;
     s += i.theme ? 1 : 0;
     return s;
@@ -136,7 +141,7 @@ async function runJob(job: JobRow): Promise<void> {
     ? (getDb().prepare("SELECT * FROM ideas WHERE id = ?").get(job.idea_id) as IdeaRow | undefined)
     : undefined;
   const pitch: Pitch = idea
-    ? { title: idea.title, logline: idea.logline, genre: idea.genre, twist: idea.twist }
+    ? { title: idea.title, logline: idea.logline, genre: idea.genre, twist: idea.twist, mechanism: idea.mechanism, era: idea.era, skeptic: idea.skeptic }
     : { title: job.title, logline: job.title, genre: "story", twist: "a surprise ending" };
 
   // Script Room
@@ -144,6 +149,7 @@ async function runJob(job: JobRow): Promise<void> {
   log("script", `Quill is writing "${pitch.title}".`, "info", job.id);
   const written = await writeStory(pitch, job.style, job.id);
   let story: Story = written.value;
+  if (job.style === "twist" && !story.mechanism && pitch.mechanism) story = { ...story, mechanism: pitch.mechanism };
   update(job.id, { story_json: JSON.stringify(story), engine: written.engine, title: story.title });
   log("script", `Wrote ${story.beats.length} beats with ${story.characters.map((c) => c.name).join(", ")} (${written.engine}).`, "info", job.id);
 
@@ -161,7 +167,7 @@ async function runJob(job: JobRow): Promise<void> {
 
   // Sound Booth
   update(job.id, { stage: "voice", progress: 0 });
-  const voices = await recordVoices(story, dir, (d, t) => update(job.id, { progress: d / t }));
+  const voices = await recordVoices(story, dir, (d, t) => update(job.id, { progress: d / t }), job.style);
   log("voice", voices.voiced ? "Echo recorded the narrator and the cast." : `Echo skipped voices. ${voices.problem}`, voices.voiced ? "info" : "warn", job.id);
 
   // Art Studio
@@ -174,7 +180,8 @@ async function runJob(job: JobRow): Promise<void> {
   // Music (Sound Booth again, now that the length is known)
   const mood = pickMood(story, job.style);
   const music = makeMusic({ mood, seconds, seed: story.title, jobDir: dir });
-  log("voice", music.file ? `Echo made the music: ${music.source}.` : "Music is switched off.", "info", job.id);
+  const sfxFile = makeSfx(plan, dir);
+  log("voice", music.file ? `Echo made the music: ${music.source}${sfxFile ? ", plus sound effects" : ""}.` : "Music is switched off.", "info", job.id);
 
   // Edit Bay
   update(job.id, { stage: "edit", progress: 0 });
@@ -187,6 +194,7 @@ async function runJob(job: JobRow): Promise<void> {
     look: job.look,
     plan,
     musicFile: music.file,
+    sfxFile,
     musicMood: mood,
     outFile: rendered,
     onProgress: (p) => update(job.id, { progress: p }),

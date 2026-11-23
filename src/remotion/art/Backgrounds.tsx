@@ -496,5 +496,248 @@ export function sceneLayers(setting: Setting, time: TimeOfDay, id: string): Laye
           </g>
         ),
       };
+    case "workshop":
+      return {
+        far: (
+          <g>
+            <rect x={L} y={-400} width={W} height={2000} fill={tod("#8a6a4f", time)} />
+            {Array.from({ length: 12 }, (_, i) => (
+              <rect key={i} x={L + i * 160} y={-400} width={8} height={1600} fill={tod("#6f533c", time)} />
+            ))}
+            <Window x={620} y={360} w={320} h={380} time={time} id={id} />
+            <rect x={60} y={300} width={420} height={460} rx={10} fill={tod("#5b4330", time)} />
+            {[0, 1, 2, 3].map((i) => (
+              <g key={i}>
+                <line x1={110 + i * 100} y1={330} x2={110 + i * 100} y2={420} stroke={tod("#c9c9c9", time)} strokeWidth={6} />
+                <rect x={95 + i * 100} y={420} width={30} height={70} rx={6} fill={tod(["#c8323c", "#4f9dff", "#ffd23f", "#5ccf6b"][i], time)} />
+              </g>
+            ))}
+            <circle cx={270} cy={640} r={80} fill="none" stroke={tod("#b8932f", time)} strokeWidth={22} strokeDasharray="20 14" />
+          </g>
+        ),
+        mid: (
+          <g>
+            <Floor time={time} color="#9c7650" lines="#7a5a3a" />
+            <rect x={-300} y={1150} width={640} height={60} rx={10} fill={tod("#a8714a", time)} />
+            <rect x={-280} y={1210} width={30} height={200} fill={tod("#6f533c", time)} />
+            <rect x={300} y={1210} width={30} height={200} fill={tod("#6f533c", time)} />
+            <circle cx={40} cy={1110} r={50} fill="none" stroke={tod("#888", time)} strokeWidth={16} strokeDasharray="14 10" />
+          </g>
+        ),
+        near: (
+          <g>
+            <rect x={900} y={1650} width={400} height={400} rx={10} fill={tod("#6f533c", time)} />
+            <rect x={940} y={1600} width={100} height={60} rx={8} fill={tod("#c8323c", time)} />
+          </g>
+        ),
+      };
+    case "harbor":
+      return {
+        far: (
+          <g>
+            <Sky time={time} id={id} />
+            <rect x={L} y={980} width={W} height={300} fill={tod("#2b7fb8", time)} />
+            <g transform="translate(700 980)">
+              <path d="M -200 0 L 200 0 L 150 70 L -150 70 Z" fill={tod("#7a4b2e", time)} />
+              <rect x={-8} y={-360} width={16} height={360} fill={tod("#5b4330", time)} />
+              <path d="M 8 -340 L 170 -60 L 8 -60 Z" fill={tod("#f3ead7", time)} />
+              <path d="M -8 -300 L -150 -60 L -8 -60 Z" fill={tod("#e8dcc2", time)} />
+            </g>
+            <rect x={60} y={760} width={70} height={240} fill={tod("#f3ead7", time)} />
+            <rect x={50} y={720} width={90} height={50} fill={tod("#c8323c", time)} />
+            {time === "night" && <path d="M 95 740 L -300 600 L -300 880 Z" fill="#fff6c2" opacity={0.25} />}
+          </g>
+        ),
+        mid: (
+          <g>
+            <rect x={L} y={1180} width={W} height={1300} fill={tod("#a8845e", time)} />
+            {Array.from({ length: 14 }, (_, i) => (
+              <rect key={i} x={L + i * 140} y={1180} width={8} height={1300} fill={tod("#8a6a48", time)} />
+            ))}
+            <rect x={L} y={1180} width={W} height={20} fill={tod("#6f533c", time)} />
+          </g>
+        ),
+        near: (
+          <g>
+            <rect x={950} y={1300} width={60} height={800} fill={tod("#6f533c", time)} />
+            <path d="M 960 1350 q -120 200 30 400" stroke={tod("#d9c39a", time)} strokeWidth={22} fill="none" />
+            <ellipse cx={980} cy={1290} rx={50} ry={16} fill={tod("#5b4330", time)} />
+          </g>
+        ),
+      };
+    case "canyon":
+      return {
+        far: (
+          <g>
+            <Sky time={time} id={id} />
+            <path d={`M ${L} 1180 L ${L} 520 L 80 600 L 160 450 L 300 560 L 330 1180 Z`} fill={tod("#c2703d", time)} />
+            <path d={`M ${R} 1180 L ${R} 480 L 960 560 L 860 420 L 760 600 L 720 1180 Z`} fill={tod("#b5622f", time)} />
+            {[700, 820, 940].map((y) => (
+              <line key={y} x1={L} y1={y} x2={330} y2={y + 30} stroke={tod("#a35a2c", time)} strokeWidth={10} opacity={0.6} />
+            ))}
+          </g>
+        ),
+        mid: (
+          <g>
+            <Floor time={time} color="#d99a5b" />
+            {[0, 1].map((k) => (
+              <line key={k} x1={470 + k * 140} y1={1180} x2={180 + k * 720} y2={2300} stroke={tod("#5b5670", time)} strokeWidth={18} />
+            ))}
+            {Array.from({ length: 9 }, (_, i) => {
+              const y = 1200 + i * i * 14 + i * 40;
+              const half = 70 + i * 40;
+              return <rect key={i} x={540 - half - 20} y={y} width={half * 2 + 40} height={14 + i * 2} rx={4} fill={tod("#7a4b2e", time)} />;
+            })}
+          </g>
+        ),
+        near: (
+          <g>
+            <path d="M -200 2100 L -200 1500 Q -60 1420 60 1560 L 120 2100 Z" fill={tod("#a35a2c", time)} />
+            <path d="M 1000 1900 l 20 -140 l 30 0 l 20 140 Z M 980 1820 h 110" stroke={tod("#3e8f50", time)} strokeWidth={26} strokeLinecap="round" />
+          </g>
+        ),
+      };
+    case "prison":
+      return {
+        far: (
+          <g>
+            <rect x={L} y={-400} width={W} height={2000} fill={tod("#8f8a85", time)} />
+            {Array.from({ length: 30 }, (_, i) => (
+              <rect key={i} x={L + (i % 6) * 320 + (Math.floor(i / 6) % 2) * 160} y={-100 + Math.floor(i / 6) * 260} width={300} height={240} rx={10} fill={tod("#9d9893", time)} stroke={tod("#7a7570", time)} strokeWidth={6} />
+            ))}
+            <rect x={680} y={380} width={240} height={200} rx={10} fill={SKY[time].top} />
+            {[0, 1, 2, 3].map((i) => (
+              <rect key={i} x={700 + i * 60} y={380} width={14} height={200} fill={tod("#444", time)} />
+            ))}
+          </g>
+        ),
+        mid: (
+          <g>
+            <Floor time={time} color="#7d7873" />
+            <rect x={-300} y={1080} width={520} height={120} rx={10} fill={tod("#6b5d50", time)} />
+            <rect x={-300} y={1060} width={520} height={30} rx={10} fill={tod("#c9c0b0", time)} />
+          </g>
+        ),
+        near: (
+          <g>
+            {Array.from({ length: 4 }, (_, i) => (
+              <rect key={i} x={-120 + i * 70} y={-200} width={26} height={2400} fill={tod("#3b3f4c", time)} />
+            ))}
+            <rect x={-150} y={600} width={340} height={24} fill={tod("#3b3f4c", time)} />
+          </g>
+        ),
+      };
+    case "mine":
+      return {
+        far: (
+          <g>
+            <rect x={L} y={-400} width={W} height={2000} fill={tod("#4a3b33", time === "day" ? "sunset" : time)} />
+            <path d={`M ${L} -400 L ${R} -400 L ${R} 300 Q 540 140 ${L} 300 Z`} fill="#2b221e" />
+            <path d="M 300 1180 L 300 560 Q 540 380 780 560 L 780 1180 Z" fill="#1a1412" />
+            {[300, 780].map((x) => (
+              <rect key={x} x={x - 30} y={540} width={60} height={640} fill={tod("#8a5a3b", time)} />
+            ))}
+            <rect x={240} y={520} width={600} height={50} fill={tod("#8a5a3b", time)} />
+            {[200, 880].map((x) => (
+              <g key={x}>
+                <circle cx={x} cy={500} r={22} fill="#ffcf6b" />
+                <circle cx={x} cy={500} r={70} fill="#ffcf6b" opacity={0.2} />
+              </g>
+            ))}
+          </g>
+        ),
+        mid: (
+          <g>
+            <Floor time={time} color="#5e4a3e" />
+            {[0, 1].map((k) => (
+              <line key={k} x1={500 + k * 80} y1={1180} x2={300 + k * 480} y2={2300} stroke="#9aa0ad" strokeWidth={14} />
+            ))}
+            <path d="M 760 1120 h 220 l -30 120 h -160 Z" fill={tod("#6d7187", time)} />
+            {[790, 940].map((x) => (
+              <circle key={x} cx={x} cy={1250} r={24} fill="#333" />
+            ))}
+            <circle cx={820} cy={1110} r={34} fill={tod("#3b3f4c", time)} />
+            <circle cx={880} cy={1100} r={40} fill={tod("#ffd23f", time)} />
+          </g>
+        ),
+        near: (
+          <g>
+            <path d="M -300 2200 L -300 1400 Q -100 1300 80 1500 L 160 2200 Z" fill="#2b221e" />
+            <path d="M 1380 -300 L 1380 900 Q 1100 700 1050 -300 Z" fill="#2b221e" />
+          </g>
+        ),
+      };
+    case "market":
+      return {
+        far: (
+          <g>
+            <Sky time={time} id={id} />
+            {[-260, 100, 460, 820, 1180].map((x, i) => (
+              <g key={x}>
+                <rect x={x} y={500 + (i % 2) * 60} width={320} height={680} fill={tod(["#e8c79a", "#d9a066", "#f0d9b5"][i % 3], time)} />
+                <rect x={x + 120} y={640 + (i % 2) * 60} width={80} height={110} rx={40} fill={tod("#5b4330", time)} />
+              </g>
+            ))}
+            <path d={`M ${L} 420 Q 540 560 ${R} 420`} stroke="#555" strokeWidth={4} fill="none" />
+            {Array.from({ length: 12 }, (_, i) => (
+              <path key={i} d={`M ${L + 80 + i * 150} ${470 + Math.sin(i) * 20} l 30 50 l 30 -50 Z`} fill={["#ff5a5a", "#ffd23f", "#4f9dff", "#5ccf6b"][i % 4]} />
+            ))}
+          </g>
+        ),
+        mid: (
+          <g>
+            <Floor time={time} color="#c8b08a" />
+            {[-200, 860].map((x) => (
+              <g key={x}>
+                <rect x={x} y={1000} width={340} height={200} fill={tod("#a8714a", time)} />
+                <path d={`M ${x - 30} 1000 L ${x + 370} 1000 L ${x + 330} 900 L ${x + 10} 900 Z`} fill={tod("#c8323c", time)} />
+                {[0, 1, 2, 3].map((i) => (
+                  <circle key={i} cx={x + 60 + i * 70} cy={990} r={26} fill={tod(["#ff9a3c", "#5ccf6b", "#ff5a5a", "#ffd23f"][i], time)} />
+                ))}
+              </g>
+            ))}
+          </g>
+        ),
+        near: (
+          <g>
+            <rect x={-160} y={1650} width={360} height={260} rx={20} fill={tod("#9a6b45", time)} />
+            {[0, 1, 2].map((i) => (
+              <circle key={i} cx={-60 + i * 90} cy={1640} r={46} fill={tod(["#ff5a5a", "#ffd23f", "#ff9a3c"][i], time)} />
+            ))}
+          </g>
+        ),
+      };
+    case "lab":
+      return {
+        far: (
+          <g>
+            <rect x={L} y={-400} width={W} height={2000} fill={tod("#dfe9ee", time)} />
+            <rect x={80} y={340} width={920} height={420} rx={14} fill={tod("#f7fbfd", time)} stroke={tod("#9fb3bf", time)} strokeWidth={8} />
+            <path d="M 140 660 l 120 -160 l 90 90 l 140 -220 l 110 150 l 160 -60 l 120 120" stroke={tod("#4f9dff", time)} strokeWidth={10} fill="none" />
+            {[200, 420, 640, 860].map((x) => (
+              <circle key={x} cx={x} cy={420} r={18} fill={tod("#ff5a5a", time)} />
+            ))}
+          </g>
+        ),
+        mid: (
+          <g>
+            <Floor time={time} color="#b9c7cf" lines="#9fb0ba" />
+            <rect x={-300} y={1080} width={W} height={40} rx={8} fill={tod("#6d7a85", time)} />
+            {[60, 220, 380, 760, 920].map((x, i) => (
+              <g key={x}>
+                <path d={`M ${x - 30} 1080 L ${x - 10} 980 L ${x + 10} 980 L ${x + 30} 1080 Z`} fill={tod(["#5ccf6b", "#a77bff", "#ffd23f", "#2ec4b6", "#ff8fc7"][i], time)} opacity={0.85} />
+                <rect x={x - 12} y={940} width={24} height={44} fill={tod("#e8f4f8", time)} stroke="#9fb3bf" strokeWidth={3} />
+              </g>
+            ))}
+          </g>
+        ),
+        near: (
+          <g>
+            <rect x={900} y={1500} width={60} height={600} fill={tod("#6d7a85", time)} />
+            <circle cx={930} cy={1480} r={70} fill="none" stroke={tod("#6d7a85", time)} strokeWidth={24} />
+            <circle cx={930} cy={1480} r={40} fill="#bfe8ff" opacity={0.7} />
+          </g>
+        ),
+      };
   }
 }

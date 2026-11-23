@@ -5,8 +5,7 @@ import type { VideoProps } from "../lib/story";
 import { Scene } from "./Scene";
 import { EndCard, TitleCard } from "./Text";
 
-const MUSIC_FULL = 0.42;
-const MUSIC_DUCKED = 0.1;
+const LEVELS = { hook: [0.42, 0.1], cozy: [0.38, 0.1], twist: [0.22, 0.05] } as const; // [full, under voices]
 const RAMP = 8;
 
 function speakingWindows(p: VideoProps): [number, number][] {
@@ -32,6 +31,7 @@ const Intro: React.FC<{ title: string; total: number }> = ({ title, total }) => 
 
 export const StoryVideo: React.FC<VideoProps> = (props) => {
   const windows = speakingWindows(props);
+  const [MUSIC_FULL, MUSIC_DUCKED] = LEVELS[props.style];
   const musicVolume = (f: number) => {
     // f is relative to the music's own Sequence, which starts at 0.
     let duck = 0;
@@ -67,10 +67,13 @@ export const StoryVideo: React.FC<VideoProps> = (props) => {
           </Sequence>
         );
       })}
-      <Sequence from={at} durationInFrames={props.outroFrames} name="End card">
-        <Outro style={props.style} />
-      </Sequence>
+      {props.outroFrames > 0 && (
+        <Sequence from={at} durationInFrames={props.outroFrames} name="End card">
+          <Outro style={props.style} />
+        </Sequence>
+      )}
       {props.musicSrc && <Html5Audio src={props.musicSrc} volume={musicVolume} loop={props.musicLoop} />}
+      {props.sfxSrc && <Html5Audio src={props.sfxSrc} volume={0.8} />}
     </AbsoluteFill>
   );
 };

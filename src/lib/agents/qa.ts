@@ -91,15 +91,31 @@ export function ruleCheck(input: Story, style: StoryStyle): { story: Story; issu
     if (wc === 0) fatal.push(`Beat ${i + 1} has no narration`);
   });
 
-  // Hook: dialogue is rare.
-  if (style === "hook") {
+  // Hook and Twist Tale: dialogue is rare.
+  if (style !== "cozy") {
+    const max = style === "twist" ? 3 : 4;
     const lines = story.beats.filter((b) => b.line);
-    if (lines.length > 4) {
-      lines.slice(4).forEach((b) => {
+    if (lines.length > max) {
+      lines.slice(max).forEach((b) => {
         b.line = null;
         b.speaker = null;
       });
-      issues.push("Removed extra dialogue (hook stories keep it rare)");
+      issues.push(`Removed extra dialogue (${style} stories keep it rare)`);
+    }
+  }
+
+  if (style === "twist") {
+    if (!story.mechanism || story.mechanism.trim().length < 15) fatal.push("No real mechanism explains the ending");
+    const words = story.beats.reduce((n, b) => n + wordCount(b.narration) + (b.line ? wordCount(b.line) : 0), 0);
+    if (words < 120 || words > 260) issues.push(`About ${words} spoken words; Twist Tales aim for 170 to 200`);
+    const last = story.beats[story.beats.length - 1];
+    if (/\b(part 2|part two|to be continued|stay tuned|subscribe)\b/i.test(last.narration)) {
+      last.narration = last.narration.replace(/\s*(part 2|part two|to be continued|stay tuned|subscribe)[^.!?]*[.!?]?/gi, "").trim() || last.narration;
+      issues.push("Removed a cliffhanger tease from the ending (Twist Tales stop on the punch line)");
+    }
+    if (story.caption !== story.title || story.hashtags.length) {
+      story.caption = story.title;
+      story.hashtags = [];
     }
   }
 

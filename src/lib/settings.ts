@@ -14,9 +14,9 @@ export type Settings = {
 
 const DEFAULTS: Settings = {
   autopilot: false,
-  brief: "Epic underdog stories where an overlooked kid secretly has the strongest power of all.",
-  storiesPerDay: 3,
-  style: "hook",
+  brief: "Clever tricks, inventions and true facts, told as tales where everyone laughs at the hero until the trick pays off.",
+  storiesPerDay: 1,
+  style: "twist",
   look: "2.5d",
   engine: "auto",
 };

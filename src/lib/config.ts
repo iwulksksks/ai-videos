@@ -26,6 +26,12 @@ export const config = {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean),
+  // Twist Tale idea sources: real tricks, facts and history.
+  factSubreddits: env("REELHOUSE_FACT_SUBREDDITS", "todayilearned,explainlikeimfive,AskHistorians")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean),
+  wikipediaDyk: env("REELHOUSE_WIKIPEDIA_DYK", "1") !== "0",
   trendsRss: process.env.REELHOUSE_TRENDS_RSS ?? "https://trends.google.com/trending/rss?geo=US",
   browserExecutable: env("REMOTION_BROWSER") || null,
   password: env("REELHOUSE_PASSWORD"),

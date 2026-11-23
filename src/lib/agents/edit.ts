@@ -66,6 +66,7 @@ export function buildProps(opts: {
   look: Look;
   plan: StagedPlan;
   musicFile: string | null;
+  sfxFile?: string | null;
   musicMood: MusicMood;
   baseUrl: string | null;
 }): VideoProps {
@@ -81,6 +82,7 @@ export function buildProps(opts: {
       lineAudio: url(lineFile),
     })),
     musicSrc: url(opts.musicFile),
+    sfxSrc: url(opts.sfxFile ?? null),
     musicLoop: !!opts.musicFile && opts.musicFile.endsWith(".mp3"),
     musicMood: opts.musicMood,
     introFrames: opts.plan.introFrames,
@@ -95,6 +97,7 @@ export async function renderVideo(opts: {
   look: Look;
   plan: StagedPlan;
   musicFile: string | null;
+  sfxFile?: string | null;
   musicMood: MusicMood;
   outFile: string;
   onProgress?: (p: number) => void;

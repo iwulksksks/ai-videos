@@ -198,10 +198,124 @@ const COZY_TALES: CozyTale[] = [
   },
 ];
 
+// ---------------- Twist Tales (real mechanisms, original stories) ----------------
+
+type TwistTale = { pitch: Pitch; build: (r: () => number) => Story };
+
+type B = Story["beats"][number];
+const beat = (setting: B["setting"], time: B["time"], narration: string, cast: B["cast"], extra: Partial<B> = {}): B => ({
+  setting,
+  time,
+  narration,
+  cast,
+  speaker: null,
+  line: null,
+  prop: null,
+  sfx: null,
+  ...extra,
+});
+
+const TWIST_TALES: TwistTale[] = [
+  {
+    pitch: {
+      title: "Why She Poured Water on the Sand",
+      logline: "A girl wastes precious water on the sand in front of a giant stone, and the whole work camp laughs.",
+      genre: "history",
+      twist: "The wet sand lets a handful of people pull what fifty could not.",
+      mechanism:
+        "Damp sand is stiffer than dry sand because tiny water bridges hold the grains together, so a sled stops ploughing a pile of sand in front of it and needs about half the pulling force.",
+      era: "An ancient desert quarry",
+      skeptic: "The foreman, Bram",
+    },
+    build: (r) => ({
+      title: "Why She Poured Water on the Sand",
+      logline: "A girl wastes precious water on the sand in front of a giant stone, and the whole work camp laughs.",
+      mechanism:
+        "Damp sand is stiffer than dry sand because tiny water bridges hold the grains together, so a sled stops ploughing a pile of sand in front of it and needs about half the pulling force.",
+      characters: [
+        { name: "Tali", color: pick(r, ["teal", "green", "blue"] as const), accessory: "scarf" },
+        { name: "Bram", color: "red", accessory: "hat" },
+      ],
+      beats: [
+        beat("canyon", "day", "She poured a whole jar of water onto the sand.", [{ who: 0, mood: "thinking", action: "idle" }]),
+        beat("canyon", "day", "You see, water was the most precious thing in the desert.", [{ who: 0, mood: "happy", action: "walk" }]),
+        beat("canyon", "day", "And the king wanted a stone the size of a house moved by summer.", [{ who: 1, mood: "angry", action: "idle" }]),
+        beat("canyon", "day", "Fifty men pulled it on a wooden sled. It barely moved.", [{ who: 1, mood: "angry", action: "shake" }], { prop: "rope" }),
+        beat("canyon", "sunset", "So every morning, Tali walked ahead of the sled and wet the sand.", [{ who: 0, mood: "happy", action: "walk" }]),
+        beat("canyon", "sunset", "The workers laughed until they cried.", [{ who: 1, mood: "excited", action: "jump" }, { who: 0, mood: "sad", action: "idle" }], { speaker: 1, line: "She's watering the desert!" }),
+        beat("market", "day", "Bram, the foreman, had a better plan.", [{ who: 1, mood: "happy", action: "enter" }]),
+        beat("market", "day", "More men. More rope. More shouting.", [{ who: 1, mood: "excited", action: "shake" }]),
+        beat("canyon", "day", "He banned her from the work site.", [{ who: 1, mood: "angry", action: "idle" }, { who: 0, mood: "sad", action: "walk" }]),
+        beat("canyon", "day", "With a hundred men, the stone crawled forward.", [{ who: 1, mood: "happy", action: "idle" }]),
+        beat("canyon", "sunset", "But every day, the pile of sand in front of the sled grew taller.", [{ who: 1, mood: "thinking", action: "idle" }]),
+        beat("canyon", "sunset", "The sled dug in like a shovel.", [{ who: 1, mood: "scared", action: "shake" }]),
+        beat("canyon", "day", "Then the ropes snapped.", [{ who: 1, mood: "surprised", action: "jump" }], { sfx: "snap" }),
+        beat("canyon", "day", "The stone slid back and buried the sled.", [{ who: 1, mood: "scared", action: "shake" }], { sfx: "crash" }),
+        beat("canyon", "day", "That night, Tali brought her water jar back.", [{ who: 0, mood: "thinking", action: "enter" }]),
+        beat("canyon", "night", "She wet a strip of sand, just enough to darken it.", [{ who: 0, mood: "happy", action: "idle" }], { prop: "jar" }),
+        beat("canyon", "day", "In the morning, twenty people pulled. The stone glided.", [{ who: 0, mood: "excited", action: "walk" }, { who: 1, mood: "surprised", action: "idle" }]),
+        beat("canyon", "day", "Here's why. Dry sand grains roll apart and pile up in front of the sled.", [{ who: 0, mood: "happy", action: "idle" }], { prop: "wheel" }),
+        beat("canyon", "day", "A little water makes tiny bridges between the grains, so the sand turns firm.", [{ who: 0, mood: "thinking", action: "idle" }], { prop: "jar" }),
+        beat("canyon", "sunset", "Firm sand doesn't pile up, so pulling takes about half the force.", [{ who: 0, mood: "happy", action: "idle" }, { who: 1, mood: "sad", action: "idle" }]),
+        beat("canyon", "sunset", "Bram never laughed at a jar of water again.", [{ who: 1, mood: "sad", action: "idle" }, { who: 0, mood: "excited", action: "jump" }]),
+      ],
+      caption: "Why She Poured Water on the Sand",
+      hashtags: [],
+    }),
+  },
+  {
+    pitch: {
+      title: "How a Boy Made Ice in the Desert",
+      logline: "A boy digs shallow pools in the desert to make ice, and the whole town laughs at him.",
+      genre: "science",
+      twist: "On a clear night his pools freeze while the air is still above freezing.",
+      mechanism:
+        "On clear, dry nights water loses heat by radiating it straight up to the cold sky, so very shallow water shaded from the wind can freeze even when the air is a few degrees above freezing.",
+      era: "An old desert town",
+      skeptic: "Mirza the ice merchant",
+    },
+    build: () => ({
+      title: "How a Boy Made Ice in the Desert",
+      logline: "A boy digs shallow pools in the desert to make ice, and the whole town laughs at him.",
+      mechanism:
+        "On clear, dry nights water loses heat by radiating it straight up to the cold sky, so very shallow water shaded from the wind can freeze even when the air is a few degrees above freezing.",
+      characters: [
+        { name: "Navi", color: "orange", accessory: "none" },
+        { name: "Mirza", color: "purple", accessory: "crown" },
+      ],
+      beats: [
+        beat("canyon", "night", "He was digging puddles in the desert at midnight.", [{ who: 0, mood: "thinking", action: "idle" }]),
+        beat("market", "day", "You see, the town was so hot that ice cost more than silver.", [{ who: 1, mood: "happy", action: "idle" }]),
+        beat("market", "day", "Mirza sold it, carried down from the mountains on camels.", [{ who: 1, mood: "excited", action: "jump" }]),
+        beat("market", "sunset", "Half of it melted on the way, so he doubled the price.", [{ who: 1, mood: "happy", action: "idle" }]),
+        beat("canyon", "sunset", "Navi said he would make ice right here.", [{ who: 0, mood: "excited", action: "jump" }]),
+        beat("market", "day", "The whole market laughed.", [{ who: 1, mood: "excited", action: "shake" }, { who: 0, mood: "sad", action: "idle" }], { speaker: 1, line: "Ice? In a desert? Go home." }),
+        beat("canyon", "sunset", "Navi built a tall mud wall, facing the sun.", [{ who: 0, mood: "happy", action: "walk" }]),
+        beat("canyon", "night", "Behind it, he filled long pools, only a finger deep.", [{ who: 0, mood: "thinking", action: "idle" }], { prop: "jar" }),
+        beat("canyon", "night", "The first night, nothing.", [{ who: 0, mood: "sad", action: "idle" }]),
+        beat("market", "day", "Mirza bought more camels.", [{ who: 1, mood: "excited", action: "walk" }]),
+        beat("canyon", "night", "The second night, the water felt colder.", [{ who: 0, mood: "surprised", action: "idle" }]),
+        beat("canyon", "night", "The third night, the sky was clear, dry and full of stars.", [{ who: 0, mood: "thinking", action: "idle" }], { sfx: "whoosh" }),
+        beat("canyon", "day", "At dawn, his pools had a skin of ice.", [{ who: 0, mood: "excited", action: "jump" }], { sfx: "ding" }),
+        beat("market", "day", "That week, Mirza's camels arrived carrying buckets of water.", [{ who: 1, mood: "scared", action: "shake" }], { sfx: "crash" }),
+        beat("market", "day", "Navi was selling ice for the price of bread.", [{ who: 0, mood: "happy", action: "idle" }, { who: 1, mood: "surprised", action: "idle" }]),
+        beat("canyon", "night", "Here's the trick. Everything warm glows invisible heat.", [{ who: 0, mood: "happy", action: "idle" }]),
+        beat("canyon", "night", "On a clear, dry night, water sends that heat straight up into the freezing sky.", [{ who: 0, mood: "thinking", action: "idle" }]),
+        beat("canyon", "night", "Shallow water loses heat faster than the air can warm it back.", [{ who: 0, mood: "thinking", action: "idle" }], { prop: "jar" }),
+        beat("canyon", "sunset", "The wall blocks the sun and the warm wind, so it freezes above zero.", [{ who: 0, mood: "happy", action: "idle" }]),
+        beat("market", "day", "Mirza still sells ice. He buys it from Navi.", [{ who: 1, mood: "sad", action: "idle" }, { who: 0, mood: "excited", action: "jump" }]),
+      ],
+      caption: "How a Boy Made Ice in the Desert",
+      hashtags: [],
+    }),
+  },
+];
+
 // ---------------- Public demo API ----------------
 
 export function demoThemes(): Theme[] {
   return [
+    { theme: "Old tricks that looked foolish but were genius", why: "Ridicule-then-payoff tales built on a real trick are the most rewatched story shorts." },
     { theme: "The kid everyone underestimated", why: "Underdog reveals are the most rewatched story shape on short video." },
     { theme: "A ceremony that decides your future", why: "Clear rules and big public moments make instant hooks." },
     { theme: "Tiny creatures with big dreams", why: "Cute heroes and gentle humor do well in cozy story feeds." },
@@ -211,7 +325,9 @@ export function demoThemes(): Theme[] {
 export function demoPitches(style: StoryStyle, usedTitles: string[]): Pitch[] {
   const used = new Set(usedTitles.map((t) => t.toLowerCase()));
   const all: Pitch[] =
-    style === "hook"
+    style === "twist"
+      ? TWIST_TALES.map((t) => t.pitch)
+      : style === "hook"
       ? HOOK_WORLDS.map((w) => ({
           title: w.title,
           logline: `${w.hero} is told they'll get the weakest ${w.thing}, but the ceremony proves everyone wrong.`,
@@ -229,6 +345,11 @@ export function demoPitches(style: StoryStyle, usedTitles: string[]): Pitch[] {
 export function demoStory(pitch: Pitch, style: StoryStyle): Story {
   const r = rng(pitch.title);
   const base = pitch.title.replace(/\s+\d+$/, "").toLowerCase();
+  if (style === "twist") {
+    const tale = TWIST_TALES.find((t) => t.pitch.title.toLowerCase() === base) ?? pick(r, TWIST_TALES);
+    const s = tale.build(r);
+    return { ...s, title: pitch.title.slice(0, 80), caption: pitch.title.slice(0, 80) };
+  }
   if (style === "hook") {
     const world = HOOK_WORLDS.find((w) => w.title.toLowerCase() === base) ?? pick(r, HOOK_WORLDS);
     const s = hookStory(world, r);

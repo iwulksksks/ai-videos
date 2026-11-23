@@ -42,7 +42,12 @@ export function characterSpeaker(index: number): number {
 }
 
 /** Speak `text` into `outFile`. `speaker` is only used for the multi-speaker character voice. */
-export async function speak(text: string, outFile: string, who: "narrator" | { character: number }): Promise<void> {
+export async function speak(
+  text: string,
+  outFile: string,
+  who: "narrator" | { character: number },
+  opts: { lengthScale?: number } = {},
+): Promise<void> {
   const piper = piperCommand();
   if (!piper) throw new Error("Piper is not installed (run: npm run setup:voice)");
   let model = voiceModel(config.narratorVoice);
@@ -56,6 +61,7 @@ export async function speak(text: string, outFile: string, who: "narrator" | { c
   }
   if (!model) throw new Error("No Piper voice downloaded (run: npm run setup:voice)");
   args.push("-m", model, "-f", outFile);
+  if (opts.lengthScale) args.push("--length-scale", String(opts.lengthScale));
   await new Promise<void>((resolve, reject) => {
     const child = spawn(piper.cmd, args, { stdio: ["pipe", "ignore", "pipe"] });
     let err = "";

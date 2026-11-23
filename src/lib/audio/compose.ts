@@ -1,6 +1,6 @@
 // Echo's composer: writes an original little tune for each story (chords, bass, melody, light drums)
 // straight to a WAV file. No samples, no downloads, no copyright worries.
-import type { MusicMood } from "../story";
+import type { MusicMood, Sfx } from "../story";
 import { writeWav } from "./wav";
 
 const SR = 32000;
@@ -28,6 +28,7 @@ const MOODS: Record<MusicMood, MoodSpec> = {
   mystery: { bpm: 84, root: 62, minor: true, progression: [0, 5, 2, 6], pad: "triangle", lead: "triangle", bass: "sine", drums: "soft", notesPerBeat: 1, padLevel: 0.11, leadLevel: 0.08, brightness: 0.35 },
   adventure: { bpm: 126, root: 67, minor: false, progression: [0, 3, 5, 4], pad: "saw", lead: "square", bass: "saw", drums: "driving", notesPerBeat: 2, padLevel: 0.07, leadLevel: 0.06, brightness: 0.5 },
   dreamy: { bpm: 78, root: 63, minor: false, progression: [0, 2, 5, 3], pad: "sine", lead: "triangle", bass: "sine", drums: "none", notesPerBeat: 1, padLevel: 0.13, leadLevel: 0.08, brightness: 0.25 },
+  curious: { bpm: 100, root: 62, minor: true, progression: [0, 3, 5, 4], pad: "sine", lead: "triangle", bass: "sine", drums: "soft", notesPerBeat: 2, padLevel: 0.07, leadLevel: 0.07, brightness: 0.3 },
   epic: { bpm: 90, root: 57, minor: true, progression: [0, 5, 2, 6], pad: "saw", lead: "saw", bass: "saw", drums: "epic", notesPerBeat: 1, padLevel: 0.08, leadLevel: 0.06, brightness: 0.45 },
 };
 
@@ -232,5 +233,39 @@ export function composeMusic(opts: { mood: MusicMood; seconds: number; seed: str
     if (i > end - fadeOut) g = Math.max(0, (end - i) / fadeOut);
     out[i] = Math.tanh(m.buf[i] * 1.4) * 0.8 * g;
   }
+  writeWav(opts.outFile, out, SR, 1);
+}
+
+/** Echo's sound effects for Twist Tale payoffs, all synthesized: rumble, snap, crash, whoosh, ding. */
+export function composeSfx(opts: { events: { time: number; kind: Sfx }[]; seconds: number; outFile: string }) {
+  const m = new Mixer(opts.seconds);
+  opts.events.forEach((e, i) => {
+    switch (e.kind) {
+      case "rumble":
+        m.noise(e.time, 1.8, 0.5, 0.02, 100 + i);
+        m.note(e.time, 1.4, 38, "sine", 0.4, { attack: 0.2, release: 0.4 });
+        break;
+      case "snap":
+        m.noise(e.time, 0.09, 0.7, 0.9, 200 + i);
+        m.kick(e.time, 0.25);
+        break;
+      case "crash":
+        m.kick(e.time, 0.7, true);
+        m.noise(e.time, 1.2, 0.55, 0.3, 300 + i);
+        m.noise(e.time + 0.05, 0.6, 0.3, 0.8, 400 + i);
+        break;
+      case "whoosh":
+        for (let k = 0; k < 6; k++) m.noise(e.time + k * 0.06, 0.25, 0.08 + k * 0.03, 0.05 + k * 0.05, 500 + i * 10 + k);
+        break;
+      case "ding":
+        m.note(e.time, 0.05, 1320, "sine", 0.25, { release: 1.2 });
+        m.note(e.time, 0.05, 2640, "sine", 0.1, { release: 0.8 });
+        break;
+      case "none":
+        break;
+    }
+  });
+  const out = new Float32Array(Math.floor(opts.seconds * SR));
+  for (let i = 0; i < out.length; i++) out[i] = Math.tanh(m.buf[i] * 1.2) * 0.9;
   writeWav(opts.outFile, out, SR, 1);
 }

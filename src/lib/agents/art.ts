@@ -59,6 +59,17 @@ export function captionChunks(text: string, frames: number, style: StoryStyle, n
   if (!ws.length) return [];
   const highlight = keyWord(text, names);
   if (style === "cozy") return [{ text, highlight, from: 0, to: frames }];
+  if (style === "twist") {
+    // One big word at a time, timed by its length.
+    const weights = ws.map((w) => w.length + 2);
+    const total = weights.reduce((a, b) => a + b, 0);
+    let at = 0;
+    return ws.map((w, i) => {
+      const from = at;
+      at = i === ws.length - 1 ? frames : Math.min(frames, at + Math.max(3, Math.round((weights[i] / total) * frames)));
+      return { text: w.replace(/[.,;:]+$/, ""), highlight: null, from, to: at };
+    });
+  }
   // Hook: 2-3 words at a time, timed by letters so longer words stay up longer.
   const groups: string[][] = [];
   let cur: string[] = [];
@@ -97,6 +108,12 @@ const REACTION_MOODS = new Set(["surprised", "scared", "excited", "angry"]);
 
 function chooseCamera(beat: Beat, i: number, style: StoryStyle, total: number): Camera {
   const reaction = beat.cast.some((c) => REACTION_MOODS.has(c.mood));
+  if (beat.prop && beat.prop !== "none") return "insert";
+  if (style === "twist") {
+    if (i === 0) return "close"; // the strange act, up close
+    if (reaction && beat.cast.length <= 2) return "close";
+    return (["push", "pan-right", "close", "pan-left", "still"] as const)[i % 5];
+  }
   if (style === "hook") {
     if (i === 0) return "push";
     if (i === total - 1) return "push";
@@ -122,8 +139,8 @@ function placeCast(cast: CastMember[], characters: Character[], camera: Camera):
 
 export function stageStory(story: Story, style: StoryStyle, audio: BeatAudio[]): StagedPlan {
   const names = story.characters.map((c) => c.name);
-  const pad = style === "hook" ? 0.25 : 0.7;
-  const minSeconds = style === "hook" ? 2.2 : 3.5;
+  const pad = style === "cozy" ? 0.7 : style === "hook" ? 0.25 : 0.15;
+  const minSeconds = style === "cozy" ? 3.5 : style === "hook" ? 2.2 : 1.8;
   const beats = story.beats.map((beat, i) => {
     const a = audio[i] ?? { narrationFile: null, narrationSeconds: null, lineFile: null, lineSeconds: null };
     const narrSec = a.narrationSeconds ?? readingSeconds(beat.narration);
@@ -150,7 +167,8 @@ export function stageStory(story: Story, style: StoryStyle, audio: BeatAudio[]):
     };
   });
   const introFrames = style === "cozy" ? Math.round(2.5 * FPS) : 0;
-  const outroFrames = Math.round((style === "hook" ? 2.2 : 2.5) * FPS);
+  // Twist Tale stops dead on the punch line so the video loops.
+  const outroFrames = style === "twist" ? 0 : Math.round((style === "hook" ? 2.2 : 2.5) * FPS);
   const totalFrames = introFrames + beats.reduce((s, b) => s + b.durationInFrames, 0) + outroFrames;
   return { beats, introFrames, outroFrames, totalFrames };
 }

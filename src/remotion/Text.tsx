@@ -62,6 +62,33 @@ export const HookCaption: React.FC<{ chunk: CaptionChunk; frame: number }> = ({ 
   );
 };
 
+/** Twist Tale captions: one big white outlined word at a time, centered. */
+export const SingleWordCaption: React.FC<{ chunk: CaptionChunk; frame: number; low?: boolean }> = ({ chunk, frame, low }) => {
+  const { fps } = useVideoConfig();
+  const pop = spring({ frame, fps, config: { damping: 14, stiffness: 260, mass: 0.5 } });
+  return (
+    <AbsoluteFill style={low ? { justifyContent: "flex-end", alignItems: "center", paddingBottom: 300 } : { justifyContent: "center", alignItems: "center", paddingBottom: 260 }}>
+      <div
+        style={{
+          fontFamily: ANTON,
+          fontSize: 150,
+          lineHeight: 1,
+          textAlign: "center",
+          textTransform: "uppercase",
+          color: "#fff",
+          padding: "0 60px",
+          transform: `scale(${0.8 + 0.2 * pop})`,
+          WebkitTextStroke: "16px #111",
+          paintOrder: "stroke fill",
+          textShadow: "0 12px 0 rgba(0,0,0,0.35)",
+        }}
+      >
+        {chunk.text}
+      </div>
+    </AbsoluteFill>
+  );
+};
+
 export const NarratorBox: React.FC<{ text: string; highlight: string | null; frame: number }> = ({ text, highlight, frame }) => {
   const o = interpolate(frame, [4, 14], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (

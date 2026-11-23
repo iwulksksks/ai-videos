@@ -17,6 +17,7 @@ function sampleProps(): VideoProps {
     characters: story.characters,
     beats: plan.beats.map(({ narrationFile: _n, lineFile: _l, ...b }) => ({ ...b, narrationAudio: null, lineAudio: null })),
     musicSrc: null,
+    sfxSrc: null,
     musicLoop: false,
     musicMood: "epic",
     introFrames: plan.introFrames,

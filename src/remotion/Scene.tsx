@@ -6,7 +6,8 @@ import { HEIGHT, WIDTH } from "../lib/story";
 import { sceneLayers } from "./art/Backgrounds";
 import { CharacterArt, motion } from "./art/Character";
 import { SKY, seeded } from "./art/palette";
-import { HookCaption, NarratorBox, SpeechBubble } from "./Text";
+import { PropArt } from "./art/Props";
+import { HookCaption, NarratorBox, SingleWordCaption, SpeechBubble } from "./Text";
 
 const FEET_Y = 1560;
 
@@ -17,8 +18,8 @@ function camera(beat: StagedBeat, frame: number, style: StoryStyle): CameraState
     extrapolateRight: "clamp",
     easing: Easing.inOut(Easing.quad),
   });
-  // Hook style punches in a little at each cut.
-  const punch = style === "hook" ? interpolate(frame, [0, 6], [0.06, 0], { extrapolateRight: "clamp" }) : 0;
+  // Hook and Twist Tale punch in a little at each cut.
+  const punch = style !== "cozy" ? interpolate(frame, [0, 6], [0.06, 0], { extrapolateRight: "clamp" }) : 0;
   switch (beat.camera) {
     case "push":
       return { zoom: 1 + 0.14 * t + punch, x: 0, y: -40 * t, tilt: 0 };
@@ -31,6 +32,8 @@ function camera(beat: StagedBeat, frame: number, style: StoryStyle): CameraState
       const cx = lead ? (0.5 - lead.x) * WIDTH : 0;
       return { zoom: 1.45 + 0.08 * t + punch, x: cx * 1.2, y: 260, tilt: 0 };
     }
+    case "insert":
+      return { zoom: 1 + 0.12 * t + punch, x: 0, y: 0, tilt: 0 };
     case "still":
     default:
       return { zoom: 1.03 + 0.02 * t, x: 0, y: 0, tilt: 0 };
@@ -118,6 +121,38 @@ export const Scene: React.FC<{
   const speakerCast = beat.cast.find((c) => c.who === beat.speaker);
   const fadeIn = style === "cozy" ? interpolate(frame, [0, 8], [0, 1], { extrapolateRight: "clamp" }) : 1;
 
+  const captions =
+    style === "cozy" ? (
+      <NarratorBox text={beat.narration} highlight={beat.captions[0]?.highlight ?? null} frame={frame} />
+    ) : (
+      beat.captions.map((c, i) =>
+        frame >= c.from && frame < (i === beat.captions.length - 1 ? beat.durationInFrames : c.to) ? (
+          style === "twist" ? <SingleWordCaption key={i} chunk={c} frame={frame - c.from} low={beat.camera === "insert"} /> : <HookCaption key={i} chunk={c} frame={frame - c.from} />
+        ) : null,
+      )
+    );
+
+  if (beat.camera === "insert" && beat.prop && beat.prop !== "none") {
+    // A close-up of the mechanism: the set fades back, the object fills the frame.
+    return (
+      <AbsoluteFill style={{ backgroundColor: "#000", overflow: "hidden" }}>
+        <Layer depth={0.35} cam={{ ...cam, zoom: cam.zoom * 1.2 }} look={look} haze={0.55} hazeColor={SKY[beat.time].bottom}>
+          {layers.far}
+        </Layer>
+        <AbsoluteFill style={{ transform: `scale(${cam.zoom})` }}>
+          <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} width={WIDTH} height={HEIGHT} style={{ overflow: "visible" }}>
+            <ellipse cx={WIDTH / 2} cy={1420} rx={420} ry={60} fill="#000" opacity={0.25} />
+            <g transform={`translate(${WIDTH / 2} 900)`}>
+              <PropArt prop={beat.prop} frame={frame} time={beat.time} />
+            </g>
+          </svg>
+        </AbsoluteFill>
+        {deep && <Lighting beat={beat} frame={frame} />}
+        {captions}
+      </AbsoluteFill>
+    );
+  }
+
   return (
     <AbsoluteFill style={{ backgroundColor: "#000", overflow: "hidden", opacity: fadeIn }}>
       <Layer depth={0.35} cam={cam} look={look} haze={beat.camera === "close" ? 0.3 : 0.16} hazeColor={SKY[beat.time].bottom}>
@@ -165,9 +200,7 @@ export const Scene: React.FC<{
           style={style}
         />
       )}
-      {style === "hook"
-        ? beat.captions.map((c, i) => (frame >= c.from && frame < (i === beat.captions.length - 1 ? beat.durationInFrames : c.to) ? <HookCaption key={i} chunk={c} frame={frame - c.from} /> : null))
-        : <NarratorBox text={beat.narration} highlight={beat.captions[0]?.highlight ?? null} frame={frame} />}
+      {captions}
     </AbsoluteFill>
   );
 };

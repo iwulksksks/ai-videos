@@ -13,15 +13,25 @@ export const SETTINGS = [
   "classroom",
   "palace",
   "arena",
+  "workshop",
+  "harbor",
+  "canyon",
+  "prison",
+  "mine",
+  "market",
+  "lab",
 ] as const;
 export const TIMES = ["day", "sunset", "night"] as const;
 export const COLORS = ["yellow", "pink", "blue", "green", "orange", "purple", "red", "teal"] as const;
 export const ACCESSORIES = ["none", "hat", "bow", "glasses", "crown", "scarf"] as const;
 export const EXPRESSIONS = ["happy", "sad", "surprised", "angry", "thinking", "excited", "scared"] as const;
 export const ACTIONS = ["idle", "enter", "jump", "shake", "walk"] as const;
-export const CAMERAS = ["push", "pan-left", "pan-right", "still", "close"] as const;
-export const MUSIC_MOODS = ["playful", "tender", "mystery", "adventure", "dreamy", "epic"] as const;
-export const STYLES = ["hook", "cozy"] as const;
+export const CAMERAS = ["push", "pan-left", "pan-right", "still", "close", "insert"] as const;
+// Objects drawn in code that "insert" close-ups can zoom into (Twist Tale explanations).
+export const PROPS = ["none", "gear", "lever", "bell", "jar", "rail", "pendulum", "wheel", "rope"] as const;
+export const SFX = ["none", "rumble", "snap", "crash", "whoosh", "ding"] as const;
+export const MUSIC_MOODS = ["playful", "tender", "mystery", "adventure", "dreamy", "epic", "curious"] as const;
+export const STYLES = ["twist", "hook", "cozy"] as const;
 export const LOOKS = ["2.5d", "flat"] as const;
 export const ENGINES = ["auto", "ollama", "claude", "demo"] as const;
 
@@ -36,6 +46,8 @@ export type MusicMood = (typeof MUSIC_MOODS)[number];
 export type StoryStyle = (typeof STYLES)[number];
 export type Look = (typeof LOOKS)[number];
 export type Engine = (typeof ENGINES)[number];
+export type Prop = (typeof PROPS)[number];
+export type Sfx = (typeof SFX)[number];
 
 // ---------- What the AI writers return ----------
 
@@ -51,6 +63,10 @@ export const PitchSchema = z.object({
   logline: z.string().min(8).max(240),
   genre: z.string().min(2).max(40),
   twist: z.string().min(4).max(240),
+  // Twist Tale only: the real, checkable trick or fact that explains the ending.
+  mechanism: z.string().max(300).nullable().optional(),
+  era: z.string().max(80).nullable().optional(),
+  skeptic: z.string().max(120).nullable().optional(),
 });
 export const PitchesSchema = z.object({ pitches: z.array(PitchSchema).min(1).max(5) });
 export type Pitch = z.infer<typeof PitchSchema>;
@@ -76,6 +92,8 @@ export const BeatSchema = z.object({
   cast: z.array(CastSchema).max(3),
   speaker: z.number().int().min(0).max(2).nullable().optional(),
   line: z.string().max(140).nullable().optional(),
+  prop: z.enum(PROPS).nullable().optional(), // object to show in close-up
+  sfx: z.enum(SFX).nullable().optional(), // sound effect at the start of the beat
 });
 export type Beat = z.infer<typeof BeatSchema>;
 
@@ -83,7 +101,8 @@ export const StorySchema = z.object({
   title: z.string().min(2).max(80),
   logline: z.string().min(4).max(240),
   characters: z.array(CharacterSchema).min(1).max(3),
-  beats: z.array(BeatSchema).min(3).max(20),
+  mechanism: z.string().max(300).nullable().optional(),
+  beats: z.array(BeatSchema).min(3).max(26),
   caption: z.string().min(4).max(400),
   hashtags: z.array(z.string().min(1).max(40)).max(12),
 });
@@ -135,6 +154,7 @@ export type VideoProps = {
   characters: Character[];
   beats: StagedBeat[];
   musicSrc: string | null;
+  sfxSrc: string | null; // sound effects track (not ducked)
   musicLoop: boolean; // true for your own MP3s, which may be shorter than the video
   musicMood: MusicMood;
   introFrames: number; // title card (cozy) or 0
@@ -148,6 +168,14 @@ export function totalFrames(p: Pick<VideoProps, "beats" | "introFrames" | "outro
 // ---------- Style rules (used by writers, QA and the demo) ----------
 
 export const STYLE_RULES = {
+  twist: {
+    minBeats: 18,
+    maxBeats: 24,
+    minWords: 3,
+    maxWords: 20,
+    maxLineWords: 10,
+    seconds: "55 to 65",
+  },
   hook: {
     minBeats: 12,
     maxBeats: 18,

@@ -24,7 +24,7 @@ export function shipStory(opts: { renderedFile: string; story: Story; folder: st
   const video = path.join(opts.folder, "video.mp4");
   fs.copyFileSync(opts.renderedFile, video);
   const tags = opts.story.hashtags.map((h) => `#${h.replace(/^#/, "").replace(/\s+/g, "")}`).join(" ");
-  fs.writeFileSync(path.join(opts.folder, "caption.txt"), `${opts.story.caption}\n\n${tags}\n`);
+  fs.writeFileSync(path.join(opts.folder, "caption.txt"), tags ? `${opts.story.caption}\n\n${tags}\n` : `${opts.story.caption}\n`);
   fs.writeFileSync(path.join(opts.folder, "story.json"), JSON.stringify({ ...opts.story, ...opts.extra }, null, 2));
   return opts.folder;
 }
