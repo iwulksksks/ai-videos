@@ -66,3 +66,17 @@ Each finished video gets a **Upload to YouTube** button too, for uploading by ha
 - Videos are labelled as **altered or synthetic content** (the story and voice are AI-made), which YouTube asks for. Titles end with `#Shorts`.
 - Reelhouse never sees your Google password. The keys stay in `.env.local` on your computer.
 - To disconnect, click **Disconnect** in the Shipping Dock. You can also remove access at <https://myaccount.google.com/permissions>.
+
+## Optional: let the Niche Scout search YouTube
+
+The **Niche Scout** (Kit, on the roof) watches the story channels you add for free, with no key. If you also want Kit to search all of YouTube for the most-viewed recent Shorts on your keywords, add a free API key:
+
+1. In the same Google Cloud project, open **APIs & Services > Credentials** (<https://console.cloud.google.com/apis/credentials>).
+2. Click **Create credentials > API key** and copy it. (Optional but wise: click **Edit API key**, and under **API restrictions** choose **YouTube Data API v3**.)
+3. Add it to `.env.local` and restart Reelhouse:
+
+   ```
+   YOUTUBE_API_KEY=paste-the-key
+   ```
+
+Each scout run searches up to 3 keywords, which uses about 300 of your 10,000 daily quota units, so it leaves plenty for uploads.

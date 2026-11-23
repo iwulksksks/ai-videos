@@ -58,6 +58,13 @@ export const ThemeSchema = z.object({
 export const ThemesSchema = z.object({ themes: z.array(ThemeSchema).min(1).max(6) });
 export type Theme = z.infer<typeof ThemeSchema>;
 
+// Niche Scout: what is working on story channels like ours (inspiration, never copied).
+export const ScoutInsightsSchema = z.object({
+  topics: z.array(ThemeSchema).min(1).max(6),
+  hooks: z.array(z.object({ pattern: z.string().min(3).max(160), why: z.string().max(240) })).min(1).max(6),
+});
+export type ScoutInsights = z.infer<typeof ScoutInsightsSchema>;
+
 export const PitchSchema = z.object({
   title: z.string().min(2).max(80),
   logline: z.string().min(8).max(240),

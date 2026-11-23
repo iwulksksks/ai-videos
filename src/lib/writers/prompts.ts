@@ -10,6 +10,7 @@ import {
   STYLE_RULES,
   TIMES,
   type Pitch,
+  type ScoutInsights,
   type Story,
   type StoryStyle,
   type Theme,
@@ -38,6 +39,19 @@ export function themesPrompt(items: string[], brief: string): string {
   ].join("\n");
 }
 
+export function scoutPrompt(videos: { title: string; channel: string; views: number; viewsPerDay: number }[], brief: string): string {
+  return [
+    `Our channel brief: "${brief}".`,
+    "These are recent short story videos from channels in our niche, ranked by views per day (best first):",
+    ...videos.slice(0, 30).map((v) => `- "${v.title}" (${v.channel}, ${v.viewsPerDay.toLocaleString("en-US")} views/day)`),
+    "",
+    "Study what is working. Do NOT copy any title, plot or character.",
+    "1. topics: 3 to 5 broad subject areas that are performing well and that we could cover with our OWN original story (for example 'medieval building tricks' or 'survival science in the desert'). 'theme' is the topic; 'why' says which videos show it is working.",
+    "2. hooks: 3 to 5 reusable title or opening patterns that are working, written as templates (for example 'Why [person] did [strange act]'), with 'why' explaining what makes them click.",
+    'Answer as JSON: {"topics":[{"theme":"...","why":"..."}],"hooks":[{"pattern":"...","why":"..."}]}',
+  ].join("\n");
+}
+
 export function pitchesPrompt(opts: {
   theme: Theme | null;
   trends: Theme[];
@@ -45,6 +59,7 @@ export function pitchesPrompt(opts: {
   usedTitles: string[];
   style: StoryStyle;
   count: number;
+  niche?: ScoutInsights | null;
 }): string {
   const styleNote =
     opts.style === "twist"
@@ -58,6 +73,9 @@ export function pitchesPrompt(opts: {
     opts.theme ? `Today's theme: "${opts.theme.theme}" (${opts.theme.why}).` : "",
     opts.trends.length
       ? `Trending themes for inspiration: ${opts.trends.map((t) => t.theme).join("; ")}.`
+      : "",
+    opts.niche
+      ? `What is working right now on story channels like ours (inspiration only: never copy another channel's title, plot or characters): topics ${opts.niche.topics.map((t) => t.theme).join("; ")}. Title and hook shapes: ${opts.niche.hooks.map((h) => h.pattern).join("; ")}.`
       : "",
     opts.usedTitles.length
       ? `Do NOT reuse or closely copy these titles we already made: ${opts.usedTitles.slice(0, 60).join("; ")}.`

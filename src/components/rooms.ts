@@ -1,7 +1,8 @@
-export type RoomId = "trends" | "producer" | "research" | "script" | "qa" | "voice" | "art" | "edit" | "ship";
+export type RoomId = "trends" | "scout" | "producer" | "research" | "script" | "qa" | "voice" | "art" | "edit" | "ship";
 
 export const ROOMS: { id: RoomId; name: string; agent: string; color: string; wall: string; job: string }[] = [
   { id: "trends", name: "Trend Lookout", agent: "Juno", color: "teal", wall: "#bfe8ff", job: "Checks what's popular this week" },
+  { id: "scout", name: "Niche Scout", agent: "Kit", color: "orange", wall: "#fff0c9", job: "Watches story channels like ours for what's working" },
   { id: "producer", name: "Producer's Office", agent: "Bea", color: "yellow", wall: "#ffe9b0", job: "Runs autopilot and picks the best pitch" },
   { id: "research", name: "Research Desk", agent: "Pip", color: "green", wall: "#d4f5c9", job: "Turns themes into story pitches" },
   { id: "script", name: "Script Room", agent: "Quill", color: "purple", wall: "#e6dbff", job: "Writes the full story" },

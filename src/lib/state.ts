@@ -2,6 +2,7 @@
 import fs from "node:fs";
 import { voiceStatus } from "./audio/piper";
 import { latestReport } from "./agents/trends";
+import { scoutStatus } from "./agents/scout";
 import { config } from "./config";
 import { getDb, recentActivity } from "./db";
 import { isBusy, waitingIdeas, type JobRow } from "./pipeline";
@@ -52,6 +53,7 @@ export async function studioState() {
     trends: trends ? { ...trends.report, created_at: trends.created_at } : null,
     tiktok: tiktokStatus(),
     youtube: youtubeStatus(),
+    scout: scoutStatus(),
   };
 }
 

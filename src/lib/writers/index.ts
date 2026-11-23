@@ -4,19 +4,21 @@ import { log, type Room } from "../db";
 import { getSettings } from "../settings";
 import {
   PitchesSchema,
+  ScoutInsightsSchema,
   QaEditSchema,
   StorySchema,
   ThemesSchema,
   type Pitch,
+  type ScoutInsights,
   type QaEdit,
   type Story,
   type StoryStyle,
   type Theme,
 } from "../story";
 import { claudeAvailable, claudeJson } from "./claude";
-import { demoPitches, demoStory, demoThemes } from "./demo";
+import { demoPitches, demoScout, demoStory, demoThemes } from "./demo";
 import { ollamaJson, ollamaStatus } from "./ollama";
-import { editPrompt, pitchesPrompt, storyPrompt, themesPrompt } from "./prompts";
+import { editPrompt, pitchesPrompt, scoutPrompt, storyPrompt, themesPrompt } from "./prompts";
 
 export type WriterName = "ollama" | "claude" | "demo";
 export type Written<T> = { value: T; engine: WriterName };
@@ -60,6 +62,13 @@ export async function writeThemes(items: string[], brief: string): Promise<Writt
   return { value: r.value.themes, engine: r.engine };
 }
 
+export async function writeScout(
+  videos: { title: string; channel: string; views: number; viewsPerDay: number }[],
+  brief: string,
+): Promise<Written<ScoutInsights>> {
+  return write("scout", ScoutInsightsSchema, scoutPrompt(videos, brief), () => demoScout(videos));
+}
+
 export async function writePitches(opts: {
   theme: Theme | null;
   trends: Theme[];
@@ -67,6 +76,7 @@ export async function writePitches(opts: {
   usedTitles: string[];
   style: StoryStyle;
   count: number;
+  niche?: ScoutInsights | null;
 }): Promise<Written<Pitch[]>> {
   const r = await write("research", PitchesSchema, pitchesPrompt(opts), () => ({
     pitches: demoPitches(opts.style, opts.usedTitles).slice(0, opts.count),

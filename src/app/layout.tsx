@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Reelhouse",
-  description: "A cartoon office building where nine AI agents make short vertical story videos.",
+  description: "A cartoon office building where ten AI agents make short vertical story videos.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

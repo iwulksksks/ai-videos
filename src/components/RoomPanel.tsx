@@ -179,6 +179,108 @@ function Trends({ state, act, pending }: { state: StudioState; act: Act; pending
   );
 }
 
+function Scout({ state, act, pending }: { state: StudioState; act: Act; pending: Partial<Record<RoomId, boolean>> }) {
+  const sc = state.scout;
+  const r = sc.report;
+  const [add, setAdd] = useState("");
+  const [keywords, setKeywords] = useState(sc.keywords.join(", "));
+  return (
+    <>
+      <div className="card">
+        <h3>Channels Kit watches</h3>
+        <p className="muted">Add story channels like ours (paste a YouTube channel link or @name). Kit reads their public feeds for free, finds which recent videos are doing best, and passes the winning topics and hook styles to the Research Desk. Stories stay our own: nothing is copied.</p>
+        {!sc.channels.length && <p className="muted">No channels yet.</p>}
+        <ul className="mini">
+          {sc.channels.map((c) => (
+            <li key={c.id}>
+              {c.name}{" "}
+              <button className="small secondary" onClick={() => void act("scout", "/api/scout", { remove: c.id })}>
+                Remove
+              </button>
+            </li>
+          ))}
+        </ul>
+        <label>
+          Add a channel
+          <input placeholder="https://www.youtube.com/@channelname" value={add} onChange={(e) => setAdd(e.target.value)} />
+        </label>
+        <button
+          className="small"
+          disabled={!add.trim() || pending.scout}
+          onClick={() => void act("scout", "/api/scout", { add }).then((d) => d && setAdd(""))}
+        >
+          Add channel
+        </button>
+      </div>
+      <div className="card">
+        {sc.searchOn ? (
+          <>
+            <label>
+              Also search YouTube for (comma separated)
+              <input value={keywords} onChange={(e) => setKeywords(e.target.value)} />
+            </label>
+            <button className="small secondary" onClick={() => void act("scout", "/api/scout", { keywords: keywords.split(",") })}>
+              Save keywords
+            </button>
+          </>
+        ) : (
+          <p className="muted">Optional: add YOUTUBE_API_KEY to .env.local and Kit will also search YouTube for this fortnight's most-viewed Shorts on your keywords (see YOUTUBE.md).</p>
+        )}
+        <p className="muted">{r ? `Last checked ${when(r.created_at.replace("T", " ").slice(0, 19))} (${r.engine}).` : "No report yet."} On autopilot Kit checks once a day.</p>
+        <button disabled={pending.scout} onClick={() => void act("scout", "/api/scout", { run: true })}>
+          {pending.scout ? "Scouting…" : "Scout now"}
+        </button>
+      </div>
+      {r && (
+        <>
+          <div className="card">
+            <h3>Topics that are working</h3>
+            <ul className="list">
+              {r.topics.map((t) => (
+                <li key={t.theme}>
+                  <b>{t.theme}</b>
+                  <p className="muted">{t.why}</p>
+                  <button className="small" disabled={pending.research} onClick={() => void act("research", "/api/ideas", t)}>
+                    Pitch our own stories on this
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="card">
+            <h3>Hooks that are working</h3>
+            <ul className="list">
+              {r.hooks.map((h) => (
+                <li key={h.pattern}>
+                  <b>{h.pattern}</b>
+                  <p className="muted">{h.why}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="card">
+            <details>
+              <summary>Top recent videos ({r.videos.length})</summary>
+              <ul className="mini">
+                {r.videos.map((v) => (
+                  <li key={v.url}>
+                    <a href={v.url} target="_blank" rel="noreferrer">
+                      {v.title}
+                    </a>{" "}
+                    <span className="muted">
+                      {v.channel}, {v.viewsPerDay.toLocaleString()} views/day
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
 function Research({ state, act, pending }: { state: StudioState; act: Act; pending: Partial<Record<RoomId, boolean>> }) {
   const [theme, setTheme] = useState("");
   return (
@@ -382,6 +484,9 @@ export function RoomPanel({ room, state, act, pending }: { room: RoomId; state: 
       break;
     case "trends":
       body = <Trends state={state} act={act} pending={pending} />;
+      break;
+    case "scout":
+      body = <Scout state={state} act={act} pending={pending} />;
       break;
     case "research":
       body = <Research state={state} act={act} pending={pending} />;

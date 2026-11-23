@@ -1,6 +1,6 @@
 // Built-in demo writer. No AI at all: hand-written templates filled in with a little randomness,
 // so the studio always works even with no Ollama and no Claude.
-import type { Character, Pitch, Story, StoryStyle, Theme } from "../story";
+import type { Character, Pitch, ScoutInsights, Story, StoryStyle, Theme } from "../story";
 
 function rng(seedText: string) {
   let h = 2166136261;
@@ -312,6 +312,33 @@ const TWIST_TALES: TwistTale[] = [
 ];
 
 // ---------------- Public demo API ----------------
+
+/** No-AI fallback for the Niche Scout: simple counting over the top titles. */
+export function demoScout(videos: { title: string; viewsPerDay: number }[]): ScoutInsights {
+  const top = videos.slice(0, 12);
+  const shapes: [RegExp, string, string][] = [
+    [/^why\b/i, "Why [someone] did [something strange]", "Opens a mystery the viewer wants solved"],
+    [/^how\b/i, "How [someone] [did the impossible]", "Promises a clever method"],
+    [/^the\b/i, "The [object or person] That [surprising result]", "Names one thing and hints at a payoff"],
+    [/\?$/, "A question title", "Viewers stay to hear the answer"],
+    [/\d/, "A number in the title (years, amounts, ages)", "Specific numbers feel real and checkable"],
+    [/\b(everyone|they|laughed|mocked|crazy|stupid)\b/i, "Everyone laughed at [hero] until...", "Ridicule then payoff"],
+  ];
+  const hooks = shapes
+    .map(([re, pattern, why]) => ({ pattern, why: `${why}. ${top.filter((v) => re.test(v.title)).length} of the top ${top.length} titles use it.`, n: top.filter((v) => re.test(v.title)).length }))
+    .filter((h) => h.n > 0)
+    .sort((a, b) => b.n - a.n)
+    .slice(0, 4)
+    .map(({ pattern, why }) => ({ pattern, why }));
+  const stop = new Set("the a an of to in and for on with how why what this that is was did his her they he she it from by at as be who are were your you my i".split(" "));
+  const counts = new Map<string, number>();
+  for (const v of top) for (const w of new Set(v.title.toLowerCase().match(/[a-z]{4,}/g) ?? [])) if (!stop.has(w)) counts.set(w, (counts.get(w) ?? 0) + 1);
+  const words = [...counts.entries()].filter(([, n]) => n > 1).sort((a, b) => b[1] - a[1]).slice(0, 4);
+  const topics = words.length
+    ? words.map(([w, n]) => ({ theme: `Stories about ${w}`, why: `"${w}" shows up in ${n} of the best-performing recent titles.` }))
+    : [{ theme: "Old tricks that looked foolish but were genius", why: "A steady performer in ridicule-then-payoff story shorts." }];
+  return { topics, hooks: hooks.length ? hooks : [{ pattern: "Why [someone] did [something strange]", why: "Opens a mystery the viewer wants solved" }] };
+}
 
 export function demoThemes(): Theme[] {
   return [

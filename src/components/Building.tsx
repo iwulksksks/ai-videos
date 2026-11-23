@@ -12,7 +12,8 @@ type Props = {
 
 // x, y, w, h for each room inside a 1000 x 1340 drawing.
 const LAYOUT: Record<RoomId, [number, number, number, number]> = {
-  trends: [300, 70, 400, 210],
+  trends: [110, 70, 385, 210],
+  scout: [505, 70, 385, 210],
   producer: [110, 300, 470, 240],
   research: [590, 300, 300, 240],
   script: [110, 550, 390, 240],
@@ -64,6 +65,19 @@ function Furniture({ id, w, h }: { id: RoomId; w: number; h: number }) {
           <rect x={w - 200} y={floor - 120} width={120} height={34} rx={14} fill="#4f9dff" transform={`rotate(-25 ${w - 140} ${floor - 100})`} />
           <rect x={40} y={floor - 120} width={110} height={80} rx={10} fill="#2d2a3e" />
           <path d={`M 52 ${floor - 55} l 20 -20 l 18 12 l 22 -30 l 20 16`} stroke="#5ccf6b" strokeWidth={5} fill="none" />
+        </g>
+      );
+    case "scout":
+      return (
+        <g>
+          <rect x={30} y={floor - 130} width={150} height={96} rx={10} fill="#2d2a3e" />
+          <rect x={40} y={floor - 120} width={130} height={76} rx={6} fill="#ff5a5a" />
+          <path d={`M 95 ${floor - 100} l 26 18 l -26 18 z`} fill="#fff" />
+          {[0, 1, 2, 3].map((i) => (
+            <rect key={i} x={w - 170 + i * 30} y={floor - 30 - (i + 1) * 22} width={22} height={(i + 1) * 22} rx={3} fill={i === 3 ? "#5ccf6b" : "#ff9a3c"} />
+          ))}
+          <circle cx={w - 60} cy={44} r={20} fill="none" stroke="#2d2a3e" strokeWidth={6} />
+          <rect x={w - 50} y={58} width={8} height={26} rx={4} fill="#2d2a3e" transform={`rotate(-40 ${w - 46} 62)`} />
         </g>
       );
     case "producer":
@@ -173,19 +187,19 @@ export function Building({ busy, selected, onSelect, night }: Props) {
       </defs>
       <rect x={0} y={0} width={1000} height={1340} fill="url(#bsky)" />
       {night ? (
-        <circle cx={880} cy={110} r={44} fill="#f4f1de" />
+        <circle cx={955} cy={34} r={26} fill="#f4f1de" />
       ) : (
-        <circle cx={880} cy={110} r={54} fill="#fff1a8" />
+        <circle cx={955} cy={34} r={30} fill="#fff1a8" />
       )}
       <g opacity={night ? 0.25 : 0.9} className="clouds">
-        <ellipse cx={130} cy={130} rx={80} ry={28} fill="#fff" />
-        <ellipse cx={170} cy={110} rx={50} ry={30} fill="#fff" />
+        <ellipse cx={120} cy={34} rx={60} ry={16} fill="#fff" />
+        <ellipse cx={150} cy={24} rx={36} ry={18} fill="#fff" />
       </g>
       {/* ground */}
       <rect x={0} y={1290} width={1000} height={50} fill="#6cc56a" />
       {/* building shell */}
       <rect x={90} y={285} width={820} height={1015} rx={10} fill="#e8d2b0" stroke="#5a4636" strokeWidth={8} />
-      <rect x={285} y={60} width={430} height={232} rx={8} fill="#d9c09a" stroke="#5a4636" strokeWidth={8} />
+      <rect x={90} y={60} width={820} height={232} rx={8} fill="#d9c09a" stroke="#5a4636" strokeWidth={8} />
       <rect x={70} y={275} width={860} height={22} rx={6} fill="#c8323c" />
       <text x={500} y={45} textAnchor="middle" fontSize={34} fontWeight={800} fill={night ? "#ffe14d" : "#2d2a3e"} className="sign">
         REELHOUSE

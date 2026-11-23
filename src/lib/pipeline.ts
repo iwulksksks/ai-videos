@@ -7,6 +7,7 @@ import { runQa } from "./agents/qa";
 import { shipStory, outputFolder } from "./agents/ship";
 import { makeMusic, makeSfx, pickMood, recordVoices } from "./agents/sound";
 import { latestReport, scoutTrends } from "./agents/trends";
+import { latestScout, runScout } from "./agents/scout";
 import { postToTikTok, tiktokAutoPost } from "./tiktok";
 import { postToYouTube, youtubeAutoPost } from "./youtube";
 import { config } from "./config";
@@ -87,10 +88,14 @@ export async function pitchIdeas(opts: { theme?: Theme | null; count?: number } 
   const s = getSettings();
   const report = latestReport()?.report ?? null;
   const trends = report?.themes ?? [];
-  const theme = opts.theme ?? trends[Math.floor(Math.random() * Math.max(1, trends.length))] ?? null;
+  const scout = latestScout();
+  const niche = scout ? { topics: scout.topics, hooks: scout.hooks } : null;
+  // Half the time, start from a topic that's working in our niche right now.
+  const pool = niche && Math.random() < 0.5 ? niche.topics : trends;
+  const theme = opts.theme ?? pool[Math.floor(Math.random() * Math.max(1, pool.length))] ?? null;
   log("research", `Pip is pitching stories${theme ? ` about "${theme.theme}"` : " from the channel brief"}.`);
   const used = usedTitles();
-  const res = await writePitches({ theme, trends, brief: s.brief, usedTitles: used, style: s.style, count: opts.count ?? 4 });
+  const res = await writePitches({ theme, trends, brief: s.brief, usedTitles: used, style: s.style, count: opts.count ?? 4, niche });
   const usedLower = new Set(used.map((t) => t.toLowerCase()));
   const fresh = res.value.filter((p) => !usedLower.has(p.title.toLowerCase()));
   const ins = getDb().prepare("INSERT INTO ideas (title, logline, genre, twist, theme, mechanism, era, skeptic) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
@@ -285,6 +290,7 @@ export async function autopilotRun(): Promise<number | null> {
   log("producer", "Autopilot run: Bea is checking the idea board.");
   if (waitingIdeas().length < 3) {
     await scoutTrends(false).catch((e) => log("trends", `Trend check failed: ${(e as Error).message}`, "warn"));
+    await runScout(false).catch((e) => log("scout", `Niche check failed: ${(e as Error).message}`, "warn"));
     await pitchIdeas().catch((e) => log("research", `Pitching failed: ${(e as Error).message}`, "warn"));
   }
   const idea = pickBestIdea();

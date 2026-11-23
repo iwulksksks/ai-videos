@@ -63,6 +63,7 @@ export function getDb(): Database.Database {
 
 export type Room =
   | "trends"
+  | "scout"
   | "producer"
   | "research"
   | "script"

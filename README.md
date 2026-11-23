@@ -15,6 +15,7 @@ A story moves through the building in this order.
 | Room | Worker | What it does |
 | --- | --- | --- |
 | **Trend Lookout** (rooftop) | Juno | Reads the week's top posts from r/aivideo, r/animation, r/WritingPrompts and r/shortstories plus Google Trends (no accounts or keys), and the AI groups them into story themes with a "why it's trending" note. Checks at most every 12 hours; keeps the last report when offline. |
+| **Niche Scout** | Kit | Watches story channels like ours (you add them by link; free public feeds, plus optional YouTube search with an API key), ranks their recent videos by views per day, and passes the topics and hook styles that are working to the Research Desk. Inspiration only, never copied. |
 | **Producer's Office** | Bea | The boss. Autopilot switch, channel brief, stories per day, story style (Twist Tale, Hook or Cozy), look (2.5D or Flat 2D), story writer, a Studio setup checklist and the activity log. Picks the strongest waiting pitch. |
 | **Research Desk** | Pip | Turns a theme plus trends into 3 to 5 pitches (title, logline, genre, twist) on the idea board. Skips titles already used. Each pitch has a Produce button. |
 | **Script Room** | Quill | Writes the story as checked JSON: up to 3 characters (name, color, accessory) and beats with setting, time of day, narration, who's on screen with mood and action, and an optional spoken line. |
