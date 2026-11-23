@@ -8,6 +8,7 @@ import { isBusy, waitingIdeas, type JobRow } from "./pipeline";
 import { nextRunAt } from "./scheduler";
 import { getSettings } from "./settings";
 import { tiktokStatus } from "./tiktok";
+import { youtubeStatus } from "./youtube";
 import type { Story } from "./story";
 import { claudeAvailable } from "./writers/claude";
 import { ollamaStatus } from "./writers/ollama";
@@ -50,6 +51,7 @@ export async function studioState() {
     activity: recentActivity(80),
     trends: trends ? { ...trends.report, created_at: trends.created_at } : null,
     tiktok: tiktokStatus(),
+    youtube: youtubeStatus(),
   };
 }
 

@@ -96,6 +96,10 @@ Ollama is free and good. Claude writes noticeably better stories but costs a lit
 
 See [TIKTOK.md](TIKTOK.md).
 
+## 9. Optional: upload YouTube Shorts automatically
+
+See [YOUTUBE.md](YOUTUBE.md). It works from this computer without a tunnel, uploads start out private, and Google allows about 6 a day.
+
 ## Fixing common problems
 
 | Problem | Fix |

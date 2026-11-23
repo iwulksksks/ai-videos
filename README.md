@@ -22,7 +22,7 @@ A story moves through the building in this order.
 | **Sound Booth** | Echo | Records the narrator and each character with Piper (a different voice per character), then picks a mood and composes the music. Music gets quieter whenever someone speaks. |
 | **Art Studio** | Dot | Stages each scene: length from the recorded audio, camera move (push, pan, close-up, still), who stands where, and the depth layers. |
 | **Edit Bay** | Splice | Animates everything with Remotion and renders the MP4, with a live progress bar. |
-| **Shipping Dock** | Hatch | Saves `output/<date>_<id>_<title>/` with `video.mp4`, `caption.txt` and `story.json`, offers a download, and can optionally post to TikTok ([TIKTOK.md](TIKTOK.md)). |
+| **Shipping Dock** | Hatch | Saves `output/<date>_<id>_<title>/` with `video.mp4`, `caption.txt` and `story.json`, offers a download, and can optionally post to TikTok ([TIKTOK.md](TIKTOK.md)) and upload YouTube Shorts ([YOUTUBE.md](YOUTUBE.md)). |
 
 Stories go through one at a time: script, QA, voice, art, edit, ship. A failed story is retried once, then marked **Skipped**.
 
@@ -79,4 +79,4 @@ Layout: `src/lib/agents/` has one file per room's job, `src/lib/writers/` the th
 
 ## Not built yet
 
-- Posting to Instagram Reels and YouTube Shorts (TikTok is supported, see [TIKTOK.md](TIKTOK.md)).
+- Posting to Instagram Reels (TikTok and YouTube Shorts are supported, see [TIKTOK.md](TIKTOK.md) and [YOUTUBE.md](YOUTUBE.md)).

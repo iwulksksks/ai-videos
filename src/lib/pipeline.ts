@@ -8,6 +8,7 @@ import { shipStory, outputFolder } from "./agents/ship";
 import { makeMusic, makeSfx, pickMood, recordVoices } from "./agents/sound";
 import { latestReport, scoutTrends } from "./agents/trends";
 import { postToTikTok, tiktokAutoPost } from "./tiktok";
+import { postToYouTube, youtubeAutoPost } from "./youtube";
 import { config } from "./config";
 import { getDb, log } from "./db";
 import { getSettings } from "./settings";
@@ -219,6 +220,14 @@ async function runJob(job: JobRow): Promise<void> {
       log("ship", `Hatch sent it to TikTok (${r}).`, "info", job.id);
     } catch (e) {
       log("ship", `TikTok posting failed: ${(e as Error).message}`, "warn", job.id);
+    }
+  }
+  if (youtubeAutoPost()) {
+    try {
+      const link = await postToYouTube({ videoFile: path.join(folder, "video.mp4"), story });
+      log("ship", `Hatch uploaded it to YouTube: ${link}`, "info", job.id);
+    } catch (e) {
+      log("ship", `YouTube upload failed: ${(e as Error).message}`, "warn", job.id);
     }
   }
 }

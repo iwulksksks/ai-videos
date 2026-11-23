@@ -276,6 +276,7 @@ function JobLine({ job, act }: { job: Job; act: Act }) {
 function Ship({ state, act }: { state: StudioState; act: Act }) {
   const done = state.jobs.filter((j) => j.hasVideo);
   const tk = state.tiktok;
+  const yt = state.youtube;
   return (
     <>
       <div className="card">
@@ -296,6 +297,11 @@ function Ship({ state, act }: { state: StudioState; act: Act }) {
                 {tk.connected && (
                   <button className="small secondary" onClick={() => void act("ship", "/api/tiktok/post", { jobId: j.id })}>
                     Send to TikTok
+                  </button>
+                )}
+                {yt.connected && (
+                  <button className="small secondary" onClick={() => void act("ship", "/api/youtube/post", { jobId: j.id })}>
+                    Upload to YouTube
                   </button>
                 )}
               </div>
@@ -327,6 +333,35 @@ function Ship({ state, act }: { state: StudioState; act: Act }) {
             </label>
             <p className="muted">Until TikTok approves your developer app, direct posts are private (only you can see them).</p>
             <button className="small secondary" onClick={() => void act("ship", "/api/tiktok", { disconnect: true })}>
+              Disconnect
+            </button>
+          </>
+        )}
+      </div>
+      <div className="card">
+        <h3>YouTube Shorts</h3>
+        {!yt.configured ? (
+          <p className="muted">
+            Not set up. To let Hatch upload Shorts for you, follow the steps in YOUTUBE.md, then add YOUTUBE_CLIENT_ID and YOUTUBE_CLIENT_SECRET to .env.local and restart.
+          </p>
+        ) : !yt.connected ? (
+          <a className="button" href="/api/youtube/connect">
+            Connect YouTube
+          </a>
+        ) : (
+          <>
+            <p>Connected. Uploads today: {yt.uploadsToday} (Google allows about 6 a day by default).</p>
+            <label>
+              After each video
+              <select value={yt.mode} onChange={(e) => void act("ship", "/api/youtube", { mode: e.target.value })}>
+                <option value="off">Don't upload (I'll do it myself)</option>
+                <option value="private">Upload as private (only me)</option>
+                <option value="unlisted">Upload as unlisted (anyone with the link)</option>
+                <option value="public">Upload as public</option>
+              </select>
+            </label>
+            <p className="muted">Until Google verifies your project, every upload stays private, whatever you pick here. You can make it public in YouTube Studio.</p>
+            <button className="small secondary" onClick={() => void act("ship", "/api/youtube", { disconnect: true })}>
               Disconnect
             </button>
           </>
