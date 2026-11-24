@@ -21,9 +21,10 @@ TikTok only lets "apps" post videos. So you make a free app for yourself on TikT
    - **App name**: `Reelhouse`
    - **Category**: pick the closest one, for example **Entertainment**.
    - **Description**: `Sends my own cartoon videos to my TikTok account.`
-   - **Terms of Service URL**: `https://github.com/iwulksksks/ai-videos/blob/main/docs/terms.md`
-   - **Privacy Policy URL**: `https://github.com/iwulksksks/ai-videos/blob/main/docs/privacy.md`
-   - **Platforms**: tick **Web**. If it asks for a website address, use `https://github.com/iwulksksks/ai-videos`.
+   - **Terms of Service URL**: `https://iwulksksks.github.io/ai-videos/terms.html`
+   - **Privacy Policy URL**: `https://iwulksksks.github.io/ai-videos/privacy.html`
+   - **Platforms**: tick **Web**. If it asks for a website address, use `https://iwulksksks.github.io/ai-videos/`.
+   - TikTok checks that these links are yours ("This URL is not verified"). See **Proving the links are yours** below.
 5. Scroll down to **Products** and click **Add products**. Add these two:
    - **Login Kit**
    - **Content Posting API**
@@ -32,6 +33,16 @@ TikTok only lets "apps" post videos. So you make a free app for yourself on TikT
 8. Find **Scopes** and make sure these three are ticked: `user.info.basic`, `video.upload`, `video.publish`.
 9. Near the top of the sandbox page you'll see **Client key** and **Client secret** (click the eye icon to show the secret). Leave this page open. You'll copy them in Part B.
 10. Click **Save** (or **Apply changes**) at the bottom.
+
+### Proving the links are yours (one time)
+
+The Terms and Privacy pages live on a free GitHub Pages website for this project. TikTok wants proof that you own it:
+
+1. Turn on the website: on GitHub open the project, click **Settings**, then **Pages** (left menu). Under **Branch**, choose **main** and the folder **/docs**, then click **Save**. Wait about 2 minutes.
+2. On the TikTok page, click **Verify URL properties** (red link under the box), then **Add URL property**, choose **URL prefix**, and type `https://iwulksksks.github.io/ai-videos/`.
+3. TikTok gives you a small file to **Download** (its name starts with `tiktok` and ends in `.txt`). Save it.
+4. Put that file in the project's `docs` folder on GitHub (or send it to Claude to do it). Wait about 2 minutes.
+5. Back on TikTok, click **Verify**. The red warnings go away. Click **Save**.
 
 ## Part B: Give the two codes to Reelhouse
 
