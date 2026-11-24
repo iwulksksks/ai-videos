@@ -21,7 +21,9 @@ TikTok only lets "apps" post videos. So you make a free app for yourself on TikT
    - **App name**: `Reelhouse`
    - **Category**: pick the closest one, for example **Entertainment**.
    - **Description**: `Sends my own cartoon videos to my TikTok account.`
-   - **Platforms**: tick **Web**. If it asks for a website, put any website you own. If you don't have one, leave it for now (you only need it for Part E).
+   - **Terms of Service URL**: `https://github.com/iwulksksks/ai-videos/blob/main/docs/terms.md`
+   - **Privacy Policy URL**: `https://github.com/iwulksksks/ai-videos/blob/main/docs/privacy.md`
+   - **Platforms**: tick **Web**. If it asks for a website address, use `https://github.com/iwulksksks/ai-videos`.
 5. Scroll down to **Products** and click **Add products**. Add these two:
    - **Login Kit**
    - **Content Posting API**
@@ -30,8 +32,6 @@ TikTok only lets "apps" post videos. So you make a free app for yourself on TikT
 8. Find **Scopes** and make sure these three are ticked: `user.info.basic`, `video.upload`, `video.publish`.
 9. Near the top of the sandbox page you'll see **Client key** and **Client secret** (click the eye icon to show the secret). Leave this page open. You'll copy them in Part B.
 10. Click **Save** (or **Apply changes**) at the bottom.
-
-If the website won't let you save because it wants a **Terms of Service** or **Privacy Policy** link, stop there and ask for help. We can make simple pages for those.
 
 ## Part B: Give the two codes to Reelhouse
 
@@ -86,7 +86,7 @@ When you post, turn on TikTok's **AI-generated content** label. TikTok asks crea
 
 ## Part E (optional, later): Let Reelhouse post publicly by itself
 
-TikTok has to approve your app first. This needs a website, a Terms of Service link and a Privacy Policy link, and a short screen recording that shows Reelhouse making and posting a video. TikTok usually answers within a couple of weeks.
+TikTok has to approve your app first. This needs a short screen recording that shows Reelhouse making and posting a video. TikTok usually answers within a couple of weeks.
 
 1. On the developer page, switch from **Sandbox** to **Production**.
 2. Fill in anything it marks as missing, then click **Submit for review**.
