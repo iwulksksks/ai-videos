@@ -1,7 +1,7 @@
 // App settings chosen in the Producer's Office, stored in SQLite.
 import { getDb } from "./db";
 import { config } from "./config";
-import type { Engine, Look, StoryStyle } from "./story";
+import type { Engine, Look, StoryStyle, VideoLength } from "./story";
 
 export type Settings = {
   autopilot: boolean;
@@ -9,6 +9,7 @@ export type Settings = {
   storiesPerDay: number;
   style: StoryStyle;
   look: Look;
+  length: VideoLength;
   engine: Engine;
 };
 
@@ -18,6 +19,7 @@ const DEFAULTS: Settings = {
   storiesPerDay: 1,
   style: "twist",
   look: "2.5d",
+  length: "long",
   engine: "auto",
 };
 
@@ -43,7 +45,7 @@ export function saveSettings(patch: Partial<Settings>): Settings {
   const stmt = d.prepare(
     "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
   );
-  const allowed: (keyof Settings)[] = ["autopilot", "brief", "storiesPerDay", "style", "look", "engine"];
+  const allowed: (keyof Settings)[] = ["autopilot", "brief", "storiesPerDay", "style", "look", "length", "engine"];
   for (const k of allowed) {
     if (patch[k] !== undefined) stmt.run(k, JSON.stringify(patch[k]));
   }

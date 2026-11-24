@@ -1,6 +1,6 @@
 // Built-in demo writer. No AI at all: hand-written templates filled in with a little randomness,
 // so the studio always works even with no Ollama and no Claude.
-import type { Character, Pitch, ScoutInsights, Story, StoryStyle, Theme } from "../story";
+import type { Character, Pitch, ScoutInsights, Story, StoryStyle, Theme, VideoLength } from "../story";
 import { episodeCast } from "../town";
 
 function rng(seedText: string) {
@@ -598,6 +598,85 @@ const WHATIF_EPISODES: WhatIfEpisode[] = [
   },
 ];
 
+
+// ---------------- POV Story ----------------
+// First-person mysteries: Pip finds the real reason behind a strange town rule. Long (about 2.5 min).
+
+type PovEpisode = { pitch: Pitch; build: () => Story };
+
+const POV_EPISODES: PovEpisode[] = [
+  {
+    pitch: {
+      title: "The Real Reason Nobody Whistles After Dark",
+      logline: "Everyone in Brickbury stops whistling at sunset, and Pip, who can't stop whistling, is the only one who asks why.",
+      genre: "mystery",
+      twist: "Whistles wake a cloud of glow-moths in Gus's night garden, and they fly straight to whoever whistled.",
+      skeptic: "A whistle after dark wakes the ghost of the old clock tower.",
+    },
+    build: () => {
+      const T = "town", P = "plaza", M = "market", F = "forest", H = "harbor", W = "workshop", BR = "bedroom";
+      return {
+        title: "The Real Reason Nobody Whistles After Dark",
+        logline: "Everyone in Brickbury stops whistling at sunset, and Pip, who can't stop whistling, is the only one who asks why.",
+        mechanism: null,
+        characters: cast("pov-whistle", "Gus", "Mr. Fenn"),
+        beats: [
+          beat(T, "sunset", "In Brickbury, nobody is allowed to whistle after dark.", [on(0, "thinking")], { sfx: "ding" }),
+          beat(T, "sunset", "The second the sun goes down, the whole town goes quiet.", [on(0, "surprised"), on(2, "scared")]),
+          beat(M, "sunset", "The fruit seller stops mid-tune and covers his mouth.", [on(2, "scared", "shake")]),
+          beat(P, "night", "Even the kettles here have little hats so they can't whistle.", [on(0, "surprised")]),
+          beat(BR, "night", "Here's my problem. I whistle when I'm nervous.", [on(0, "sad")]),
+          beat(BR, "night", "And I'm nervous all the time.", [on(0, "scared", "shake")]),
+          beat(P, "night", "So every night, someone shushes me.", [on(0, "sad"), on(2, "angry")], { speaker: 1, line: "Not after dark, kid!" }),
+          beat(P, "night", "I asked why. Every grown-up gave me the same answer.", [on(0, "thinking"), on(2, "thinking")]),
+          beat(P, "night", "That's just how it is.", [on(2, "happy")], { speaker: 2, line: "That's just how it is." }),
+          beat(BR, "night", "That's not a reason. That's a shrug.", [on(0, "angry")]),
+          beat(F, "night", "Then one night, walking home late, I forgot.", [on(0, "happy", "walk")]),
+          beat(F, "night", "I whistled one tiny note.", [on(0, "happy")], { sfx: "whoosh" }),
+          beat(F, "night", "And something in the dark whistled back.", [on(0, "scared", "shake")], { sfx: "rumble" }),
+          beat(T, "night", "I ran all the way home and didn't sleep a wink.", [on(0, "scared", "walk")]),
+          beat(BR, "day", "In the morning, I decided to find out the real reason.", [on(0, "thinking")]),
+          beat(H, "day", "First clue: Mr. Fenn the mail carrier.", [on(0, "thinking"), on(2, "happy")]),
+          beat(H, "day", "He's carried letters here for forty years, so he knows everything.", [on(2, "excited")]),
+          beat(H, "day", "He said the rule started the summer of the big party.", [on(2, "thinking")], { speaker: 2, line: "Nobody talks about that party." }),
+          beat(H, "day", "Then he walked away very fast.", [on(2, "scared", "walk")]),
+          beat(M, "day", "Second clue: the old town paper, at the bottom of a crate.", [on(0, "surprised")], { sfx: "ding" }),
+          beat(M, "day", "The headline said the mayor's party ended in a blinding light.", [on(0, "surprised")]),
+          beat(M, "day", "And under it: 'Gardener says, please, no more whistling.'", [on(0, "thinking")]),
+          beat(F, "sunset", "Last clue: Gus, the grumpy gardener next door.", [on(0, "scared"), on(1, "angry")]),
+          beat(F, "sunset", "His garden has a wall nobody has ever seen over.", [on(0, "thinking")]),
+          beat(F, "sunset", "And every night, a soft green glow comes from behind it.", [on(0, "surprised"), on(1, "angry")]),
+          beat(P, "night", "Now, everyone in town believes the same thing.", [on(2, "scared")]),
+          beat(P, "night", "A whistle after dark wakes the ghost of the clock tower.", [on(2, "scared", "shake")], { sfx: "rumble" }),
+          beat(P, "night", "And standing there, I almost believed it too.", [on(0, "scared", "shake")]),
+          beat(F, "night", "But a ghost doesn't need a garden. So I climbed Gus's wall.", [on(0, "thinking", "jump")]),
+          beat(F, "night", "I took a deep breath, and I whistled.", [on(0, "scared")], { sfx: "whoosh" }),
+          beat(F, "night", "The whole garden lit up.", [on(0, "surprised")], { sfx: "ding" }),
+          beat(F, "night", "Thousands of tiny glowing moths rose out of the flowers.", [on(0, "surprised", "jump")]),
+          beat(F, "night", "And they flew straight at me.", [on(0, "scared", "shake")], { sfx: "whoosh" }),
+          beat(F, "night", "The real reason? Glow-moths. They love a whistle.", [on(0, "excited"), on(1, "surprised")]),
+          beat(F, "night", "Gus grows them. Whistle, and they come to find you.", [on(1, "happy")], { speaker: 1, line: "They think it's their mum." }),
+          beat(F, "night", "At the mayor's party, the whole town whistled at once.", [on(1, "thinking")]),
+          beat(P, "night", "A million moths. One very bright mayor.", [on(1, "happy")], { sfx: "crash" }),
+          beat(F, "night", "Gus asked everyone to stop, and the story grew a ghost.", [on(1, "sad"), on(0, "thinking")]),
+          beat(F, "night", "He liked the ghost. It kept people out of his garden.", [on(1, "happy")]),
+          beat(P, "night", "Now, once a year, the whole town whistles on purpose.", [on(0, "excited"), on(1, "happy"), on(2, "excited")], { sfx: "ding" }),
+          beat(P, "night", "It's the best light show you've ever seen.", [on(0, "excited", "jump")]),
+          beat(BR, "night", "And I still whistle when I'm nervous.", [on(0, "happy")]),
+          beat(P, "night", "Mr. Fenn still won't. He just hums. Very loudly.", [on(2, "happy")], { speaker: 2, line: "Hmm hmm hmmm!" }),
+        ],
+        highlights: [
+          { start: 1, end: 19, hook: "I whistled one note after dark, and something whistled back." },
+          { start: 15, end: 33, hook: "Our town has a rule nobody can explain, so I followed the clues." },
+          { start: 26, end: 43, hook: "Nobody in my town whistles after dark. Tonight I found out why." },
+        ],
+        caption: "The ghost was moths. It was always moths.",
+        hashtags: ["povstory", "storytime", "papercraft", "mystery", "therealreason"],
+      };
+    },
+  },
+];
+
 export function demoThemes(): Theme[] {
   return [
     { theme: "Old tricks that looked foolish but were genius", why: "Ridicule-then-payoff tales built on a real trick are the most rewatched story shorts." },
@@ -616,6 +695,8 @@ export function demoPitches(style: StoryStyle, usedTitles: string[]): Pitch[] {
       ? GOSSIP_EPISODES.map((e) => e.pitch)
       : style === "whatif"
       ? WHATIF_EPISODES.map((e) => e.pitch)
+      : style === "pov"
+      ? POV_EPISODES.map((e) => e.pitch)
       : style === "hook"
       ? HOOK_WORLDS.map((w) => ({
           title: w.title,
@@ -631,7 +712,7 @@ export function demoPitches(style: StoryStyle, usedTitles: string[]): Pitch[] {
   return all.map((p) => ({ ...p, title: `${p.title} ${n}` }));
 }
 
-export function demoStory(pitch: Pitch, style: StoryStyle): Story {
+export function demoStory(pitch: Pitch, style: StoryStyle, _length: VideoLength = "short"): Story {
   const r = rng(pitch.title);
   const base = pitch.title.replace(/\s+\d+$/, "").toLowerCase();
   if (style === "twist") {
@@ -645,6 +726,10 @@ export function demoStory(pitch: Pitch, style: StoryStyle): Story {
   }
   if (style === "whatif") {
     const ep = WHATIF_EPISODES.find((e) => e.pitch.title.toLowerCase() === base) ?? pick(r, WHATIF_EPISODES);
+    return { ...ep.build(), title: pitch.title.slice(0, 80) };
+  }
+  if (style === "pov") {
+    const ep = POV_EPISODES.find((e) => e.pitch.title.toLowerCase() === base) ?? pick(r, POV_EPISODES);
     return { ...ep.build(), title: pitch.title.slice(0, 80) };
   }
   if (style === "hook") {

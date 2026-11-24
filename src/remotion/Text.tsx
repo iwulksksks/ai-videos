@@ -170,9 +170,20 @@ export const TitleCard: React.FC<{ title: string; frame: number; total: number }
   );
 };
 
-export const EndCard: React.FC<{ style: StoryStyle; frame: number }> = ({ style, frame }) => {
+export const EndCard: React.FC<{ style: StoryStyle; frame: number; text?: string | null }> = ({ style, frame, text }) => {
   const { fps } = useVideoConfig();
   const s = spring({ frame, fps, config: { damping: 9, stiffness: 160 } });
+  if (text) {
+    // TikTok clips: send people to the full story.
+    const nudge = 1 + 0.03 * Math.sin(frame / 5);
+    return (
+      <AbsoluteFill style={{ background: "radial-gradient(circle at 50% 45%, #fff3d6, #ffd84d)", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ fontFamily: FREDOKA, fontSize: 120, color: "#2b2b3a", textAlign: "center", padding: "0 90px", lineHeight: 1.1, transform: `scale(${s * nudge})` }}>
+          {text}
+        </div>
+      </AbsoluteFill>
+    );
+  }
   if (style === "hook") {
     const pulse = 1 + 0.04 * Math.sin(frame / 4);
     return (

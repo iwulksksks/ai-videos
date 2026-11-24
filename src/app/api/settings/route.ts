@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { log } from "@/lib/db";
 import { getSettings, saveSettings, setMeta } from "@/lib/settings";
-import { ENGINES, LOOKS, STYLES } from "@/lib/story";
+import { ENGINES, LENGTHS, LOOKS, STYLES } from "@/lib/story";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,6 +15,7 @@ export async function POST(req: Request) {
   if (typeof body.storiesPerDay === "number") patch.storiesPerDay = body.storiesPerDay;
   if (STYLES.includes(body.style as never)) patch.style = body.style as never;
   if (LOOKS.includes(body.look as never)) patch.look = body.look as never;
+  if (LENGTHS.includes(body.length as never)) patch.length = body.length as never;
   if (ENGINES.includes(body.engine as never)) patch.engine = body.engine as never;
   const after = saveSettings(patch);
   if (patch.autopilot !== undefined && patch.autopilot !== before.autopilot) {

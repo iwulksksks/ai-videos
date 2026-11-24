@@ -2,7 +2,7 @@
 import React from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame, Easing } from "remotion";
 import type { Character, Look, StagedBeat, StoryStyle } from "../lib/story";
-import { HEIGHT, WIDTH } from "../lib/story";
+import { HEIGHT, WIDTH, isPaper } from "../lib/story";
 import { sceneLayers } from "./art/Backgrounds";
 import { CharacterArt, motion } from "./art/Character";
 import { SKY, seeded } from "./art/palette";
@@ -33,7 +33,7 @@ function camera(beat: StagedBeat, frame: number, style: StoryStyle): CameraState
       const lead = beat.cast[0];
       const cx = lead ? (0.5 - lead.x) * WIDTH : 0;
       // Toy-block people are taller, so frame them lower to keep the whole head in shot.
-      return { zoom: 1.45 + 0.08 * t + punch, x: cx * 1.2, y: style === "gossip" || style === "whatif" ? 470 : 260, tilt: 0 };
+      return { zoom: 1.45 + 0.08 * t + punch, x: cx * 1.2, y: isPaper(style) ? 470 : 260, tilt: 0 };
     }
     case "insert":
       return { zoom: 1 + 0.12 * t + punch, x: 0, y: 0, tilt: 0 };
@@ -142,7 +142,7 @@ export const Scene: React.FC<{
         frame >= c.from && frame < (i === beat.captions.length - 1 ? beat.durationInFrames : c.to) ? (
           style === "twist" ? (
             <SingleWordCaption key={i} chunk={c} frame={frame - c.from} low={beat.camera === "insert"} />
-          ) : style === "gossip" || style === "whatif" ? (
+          ) : isPaper(style) ? (
             <TornCaption key={i} chunk={c} frame={frame - c.from} index={index * 10 + i} top={style === "whatif" ? 440 : 250} />
           ) : (
             <HookCaption key={i} chunk={c} frame={frame - c.from} />
@@ -151,7 +151,7 @@ export const Scene: React.FC<{
       )
     );
 
-  const paper = style === "gossip" || style === "whatif";
+  const paper = isPaper(style);
   if (paper && beat.card === "question") {
     return <QuestionCard beat={beat} frame={frame} characters={characters} />;
   }

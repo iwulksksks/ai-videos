@@ -273,3 +273,17 @@ export function episodeCast(neighborNames: string[], rand: () => number = Math.r
     ...folks.slice(0, 4).map((f, i) => ({ name: f.name, color: colors[i % colors.length], accessory: f.accessory })),
   ];
 }
+
+/** POV Story: Pip ("I") plus two neighbors, chosen from the title so the same story always gets the same cast. */
+export function povCast(title: string): Character[] {
+  let h = 2166136261;
+  for (const ch of title) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+  const rand = () => {
+    h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0;
+    return (h % 10000) / 10000;
+  };
+  // Not Lulu (the little sister) or Mrs. Plum: POV stories stay clear of a reference channel's
+  // hero-and-little-sister set-up and its villain's name.
+  const names = shuffle(NEIGHBORS.filter((n) => n.name !== "Lulu" && n.name !== "Mrs. Plum"), rand).slice(0, 2).map((n) => n.name);
+  return episodeCast(names, rand);
+}

@@ -37,7 +37,9 @@ export const MUSIC_MOODS = ["playful", "tender", "mystery", "adventure", "dreamy
 // "correction" closes it with the twist.
 // What If opens on a "question" card instead.
 export const CARDS = ["none", "headline", "correction", "question"] as const;
-export const STYLES = ["twist", "hook", "cozy", "gossip", "whatif"] as const;
+export const STYLES = ["twist", "hook", "cozy", "gossip", "whatif", "pov"] as const;
+// "long": about 2.5 minutes for YouTube, with the best moments cut into TikTok clips.
+export const LENGTHS = ["short", "long"] as const;
 export const LOOKS = ["2.5d", "flat"] as const;
 export const ENGINES = ["auto", "ollama", "claude", "demo"] as const;
 
@@ -50,6 +52,7 @@ export type Action = (typeof ACTIONS)[number];
 export type Camera = (typeof CAMERAS)[number];
 export type MusicMood = (typeof MUSIC_MOODS)[number];
 export type StoryStyle = (typeof STYLES)[number];
+export type VideoLength = (typeof LENGTHS)[number];
 export type Look = (typeof LOOKS)[number];
 export type Engine = (typeof ENGINES)[number];
 export type Prop = (typeof PROPS)[number];
@@ -113,6 +116,15 @@ export const BeatSchema = z.object({
 });
 export type Beat = z.infer<typeof BeatSchema>;
 
+// Long videos: the stretches of the story that work as stand-alone TikTok clips.
+// start and end are beat numbers counted from 1, both included.
+export const HighlightSchema = z.object({
+  start: z.number().int().min(1),
+  end: z.number().int().min(1),
+  hook: z.string().min(3).max(160), // a new first line so the clip makes sense on its own
+});
+export type Highlight = z.infer<typeof HighlightSchema>;
+
 export const StorySchema = z.object({
   title: z.string().min(2).max(80),
   logline: z.string().min(4).max(240),
@@ -120,7 +132,8 @@ export const StorySchema = z.object({
   mechanism: z.string().max(300).nullable().optional(),
   // What If: the counter that ticks through the video, like { label: "DEPTH", unit: "m" }
   counter: z.object({ label: z.string().min(1).max(28), unit: z.string().max(12) }).nullable().optional(),
-  beats: z.array(BeatSchema).min(3).max(26),
+  beats: z.array(BeatSchema).min(3).max(60),
+  highlights: z.array(HighlightSchema).max(4).nullable().optional(),
   caption: z.string().min(4).max(400),
   hashtags: z.array(z.string().min(1).max(40)).max(12),
 });
@@ -180,6 +193,7 @@ export type VideoProps = {
   counter?: { label: string; unit: string } | null; // What If
   introFrames: number; // title card (cozy) or 0
   outroFrames: number; // "The End" / "Part 2?" card
+  endText?: string | null; // TikTok clips: the end card says this instead (e.g. "Full story on YouTube")
 };
 
 export function totalFrames(p: Pick<VideoProps, "beats" | "introFrames" | "outroFrames">): number {
@@ -221,6 +235,15 @@ export const STYLE_RULES = {
     maxLineWords: 6,
     seconds: "45 to 70",
   },
+  // POV Story: first-person rule-world mystery, "the real reason" behind a strange rule.
+  pov: {
+    minBeats: 18,
+    maxBeats: 26,
+    minWords: 3,
+    maxWords: 16,
+    maxLineWords: 8,
+    seconds: "55 to 70",
+  },
   cozy: {
     minBeats: 5,
     maxBeats: 8,
@@ -230,3 +253,22 @@ export const STYLE_RULES = {
     seconds: "30 to 45",
   },
 } as const;
+
+export type StyleRules = { minBeats: number; maxBeats: number; minWords: number; maxWords: number; maxLineWords: number; seconds: string };
+
+/** The rules for a style at a length. Long videos keep the same sentence sizes but have about 2.3 times the beats. */
+export function rulesFor(style: StoryStyle, length: VideoLength = "short"): StyleRules {
+  const r = STYLE_RULES[style];
+  if (length === "short") return r;
+  return {
+    ...r,
+    minBeats: Math.round(r.minBeats * 2.2),
+    maxBeats: Math.min(58, Math.round(r.maxBeats * 2.3)),
+    seconds: "140 to 165",
+  };
+}
+
+/** Styles drawn in the paper-cutout Brickbury look. */
+export function isPaper(style: StoryStyle): boolean {
+  return style === "gossip" || style === "whatif" || style === "pov";
+}

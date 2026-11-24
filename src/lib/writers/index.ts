@@ -14,7 +14,9 @@ import {
   type Story,
   type StoryStyle,
   type Theme,
+  type VideoLength,
 } from "../story";
+import { povCast } from "../town";
 import { claudeAvailable, claudeJson } from "./claude";
 import { demoPitches, demoScout, demoStory, demoThemes } from "./demo";
 import { ollamaJson, ollamaStatus } from "./ollama";
@@ -100,8 +102,10 @@ export async function writePitches(opts: {
   return { value: pitches, engine: r.engine };
 }
 
-export async function writeStory(pitch: Pitch, style: StoryStyle, jobId?: number): Promise<Written<Story>> {
-  const r = await write("script", StorySchema, storyPrompt(pitch, style), () => demoStory(pitch, style), jobId);
+export async function writeStory(pitch: Pitch, style: StoryStyle, jobId?: number, length: VideoLength = "short"): Promise<Written<Story>> {
+  // POV Story: Pip plus two neighbors, picked from the title so a retry keeps the same cast.
+  const cast = style === "pov" ? povCast(pitch.title) : [];
+  const r = await write("script", StorySchema, storyPrompt(pitch, style, length, cast), () => demoStory(pitch, style, length), jobId);
   // What If: fall back to the counter the pitch planned when the writer leaves it out.
   if (style === "whatif" && !r.value.counter) r.value.counter = whatifCounter(pitch);
   return r;

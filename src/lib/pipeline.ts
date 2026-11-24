@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { stageStory, type StagedPlan } from "./agents/art";
 import { renderVideo } from "./agents/edit";
+import { renderClips } from "./agents/clips";
 import { runQa } from "./agents/qa";
 import { shipStory, outputFolder } from "./agents/ship";
 import { makeMusic, makeSfx, pickMood, recordVoices } from "./agents/sound";
@@ -13,7 +14,7 @@ import { postToYouTube, youtubeAutoPost } from "./youtube";
 import { config } from "./config";
 import { getDb, log } from "./db";
 import { getSettings } from "./settings";
-import { FPS, type Look, type Pitch, type Story, type StoryStyle, type Theme } from "./story";
+import { FPS, type Look, type Pitch, type Story, type StoryStyle, type Theme, type VideoLength } from "./story";
 import { writePitches, writeStory } from "./writers";
 
 export type Stage = "queued" | "script" | "qa" | "voice" | "art" | "edit" | "ship" | "done" | "failed" | "skipped";
@@ -27,6 +28,7 @@ export type JobRow = {
   attempts: number;
   style: StoryStyle;
   look: Look;
+  length: VideoLength;
   story_json: string | null;
   qa_json: string | null;
   engine: string | null;
@@ -144,8 +146,8 @@ export function createJob(idea: IdeaRow, source: "manual" | "autopilot"): number
   const d = getDb();
   d.prepare("UPDATE ideas SET status = 'used' WHERE id = ?").run(idea.id);
   const r = d
-    .prepare("INSERT INTO jobs (idea_id, title, style, look, source) VALUES (?, ?, ?, ?, ?)")
-    .run(idea.id, idea.title, s.style, s.look, source);
+    .prepare("INSERT INTO jobs (idea_id, title, style, look, length, source) VALUES (?, ?, ?, ?, ?, ?)")
+    .run(idea.id, idea.title, s.style, s.look, s.length, source);
   const id = Number(r.lastInsertRowid);
   log("producer", `Bea green-lit "${idea.title}" (${s.style}, ${s.look === "2.5d" ? "2.5D" : "Flat 2D"}).`, "info", id);
   kick();
@@ -167,7 +169,8 @@ async function runJob(job: JobRow): Promise<void> {
   // Script Room
   update(job.id, { stage: "script", progress: 0, error: null });
   log("script", `Quill is writing "${pitch.title}".`, "info", job.id);
-  const written = await writeStory(pitch, job.style, job.id);
+  const long = job.length === "long";
+  const written = await writeStory(pitch, job.style, job.id, job.length);
   let story: Story = written.value;
   if (job.style === "twist" && !story.mechanism && pitch.mechanism) story = { ...story, mechanism: pitch.mechanism };
   update(job.id, { story_json: JSON.stringify(story), engine: written.engine, title: story.title });
@@ -175,7 +178,7 @@ async function runJob(job: JobRow): Promise<void> {
 
   // QA Lab
   update(job.id, { stage: "qa" });
-  const qa = await runQa(story, job.style, job.id);
+  const qa = await runQa(story, job.style, job.id, job.length);
   update(job.id, { qa_json: JSON.stringify({ verdict: qa.verdict, issues: qa.issues, editor: qa.editor }) });
   if (qa.verdict === "rejected" || !qa.story) {
     log("qa", `Vera rejected it: ${qa.issues.slice(0, 3).join("; ")}`, "warn", job.id);
@@ -227,18 +230,46 @@ async function runJob(job: JobRow): Promise<void> {
     renderedFile: rendered,
     story,
     folder: outputFolder(job.id, story.title),
-    extra: { style: job.style, look: job.look, mood, writer: written.engine, qa: qa.issues },
+    extra: { style: job.style, look: job.look, length: job.length, mood, writer: written.engine, qa: qa.issues },
   });
   fs.rmSync(rendered, { force: true });
-  update(job.id, { stage: "done", progress: 1, output_dir: folder });
+  // Long videos stay in the Shipping Dock until their clips are cut too.
+  update(job.id, long ? { output_dir: folder } : { stage: "done", progress: 1, output_dir: folder });
   log("ship", `Hatch packed "${story.title}" into ${path.basename(folder)}.`, "info", job.id);
 
-  if (tiktokAutoPost()) {
+  // Long videos: cut the best moments into short TikTok clips, saved in the clips folder.
+  let clips: { file: string; story: Story }[] = [];
+  if (long) {
     try {
-      const r = await postToTikTok({ videoFile: path.join(folder, "video.mp4"), story });
-      log("ship", `Hatch sent it to TikTok (${r}).`, "info", job.id);
+      update(job.id, { progress: 0 });
+      clips = await renderClips({
+        story,
+        style: job.style,
+        look: job.look,
+        jobDir: dir,
+        folder,
+        audio: voices.audio,
+        onProgress: (p) => update(job.id, { progress: p }),
+        log: (m) => log("edit", `Splice: ${m}`, "info", job.id),
+      });
+      log("ship", `Hatch packed ${clips.length} TikTok clip${clips.length === 1 ? "" : "s"} into the clips folder.`, "info", job.id);
     } catch (e) {
-      log("ship", `TikTok posting failed: ${(e as Error).message}`, "warn", job.id);
+      log("edit", `Cutting the TikTok clips failed: ${(e as Error).message}`, "warn", job.id);
+    } finally {
+      update(job.id, { stage: "done", progress: 1 });
+    }
+  }
+
+  if (tiktokAutoPost()) {
+    // Long videos send their clips to TikTok; short ones go up whole.
+    const posts = long && clips.length ? clips : [{ file: path.join(folder, "video.mp4"), story }];
+    for (const [i, post] of posts.entries()) {
+      try {
+        const r = await postToTikTok({ videoFile: post.file, story: post.story });
+        log("ship", posts.length > 1 ? `Hatch sent clip ${i + 1} to TikTok (${r}).` : `Hatch sent it to TikTok (${r}).`, "info", job.id);
+      } catch (e) {
+        log("ship", `TikTok posting failed: ${(e as Error).message}`, "warn", job.id);
+      }
     }
   }
   if (youtubeAutoPost()) {

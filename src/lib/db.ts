@@ -74,6 +74,9 @@ export function getDb(): DatabaseSync {
   // Columns added later (Twist Tale pitches).
   const cols = (db.prepare("PRAGMA table_info(ideas)").all() as { name: string }[]).map((c) => c.name);
   for (const c of ["mechanism", "era", "skeptic"]) if (!cols.includes(c)) db.exec(`ALTER TABLE ideas ADD COLUMN ${c} TEXT`);
+  // Long videos (YouTube) with TikTok clips: each job remembers its length.
+  const jobCols = (db.prepare("PRAGMA table_info(jobs)").all() as { name: string }[]).map((c) => c.name);
+  if (!jobCols.includes("length")) db.exec("ALTER TABLE jobs ADD COLUMN length TEXT NOT NULL DEFAULT 'short'");
   return db;
 }
 
