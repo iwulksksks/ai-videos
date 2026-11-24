@@ -7,7 +7,6 @@ import {
   COLORS,
   EXPRESSIONS,
   SETTINGS,
-  STYLE_RULES,
   TIMES,
   isPaper,
   rulesFor,
@@ -73,7 +72,7 @@ function longRules(style: StoryStyle): string[] {
   const r = rulesFor(style, "long");
   return [
     `LENGTH: this is a LONG video for YouTube, about 2.5 minutes: ${r.minBeats} to ${r.maxBeats} beats, ${r.seconds} seconds, about 380 to 460 spoken words.`,
-    "Keep every beat as short as the rules above say; the extra length comes from more story steps, not longer sentences. Where the rules above give a shorter length or word total, use these numbers instead.",
+    `Write ALL ${r.minBeats} or more beats: count them before you answer. Keep every beat as short as the rules above say; the extra length comes from more story steps, more clues, more reactions and more small moments, not longer sentences.`,
     "Also return 'highlights': 2 or 3 stretches of the story that work as stand-alone TikTok clips of 65 to 85 seconds each (about 20 to 26 beats; never under one minute). Good picks: the opening with its rule or question, the biggest moment, and the ending with the twist.",
     "Each highlight: 'start' and 'end' are beat numbers counted from 1, both included. 'hook' is a NEW opening line of 6 to 14 words, in the same narrator's voice, that makes the clip make sense to someone who never saw the rest. Highlights may overlap. The last one should include the final beat.",
   ];
@@ -188,7 +187,7 @@ export function pitchesPrompt(opts: {
     .join("\n");
 }
 
-function vocab(style?: StoryStyle): string {
+export function vocab(style?: StoryStyle): string {
   return [
     `Allowed settings: ${SETTINGS.join(", ")}.`,
     `Allowed times: ${TIMES.join(", ")}.`,
@@ -214,14 +213,14 @@ export function gossipNeighbors(pitch: Pick<Pitch, "skeptic">): string[] {
   return names.map((n) => townFolk(n)?.name).filter((n): n is string => !!n && n !== HERO.name);
 }
 
-function gossipRules(pitch: Pitch): string[] {
-  const r = STYLE_RULES.gossip;
+function gossipRules(pitch: Pitch, length: VideoLength): string[] {
+  const r = rulesFor("gossip", length);
   const shape = shapeById(pitch.era) ?? null;
   let names = gossipNeighbors(pitch);
   if (!names.length) names = NEIGHBORS.slice(0, 3).map((n) => n.name);
   const cast = episodeCast(names);
   return [
-    `STYLE TOWN GOSSIP. ${r.minBeats} to ${r.maxBeats} beats, ${r.seconds} seconds, 140 to 190 spoken words in total.`,
+    `STYLE TOWN GOSSIP. ${r.minBeats} to ${r.maxBeats} beats, ${r.seconds} seconds, ${spokenWords(length, "140 to 190")} spoken words in total.`,
     TOWN_INTRO,
     "Characters for this episode (use exactly these, in this order, as 'characters', with these colors and accessories):",
     ...cast.map((c, i) => folkLine(c.name, i, i === 0 ? undefined : c.color)),
@@ -248,12 +247,12 @@ export function whatifCounter(pitch: Pick<Pitch, "era">): { label: string; unit:
   return { label: (label || "LEVEL").toUpperCase().slice(0, 28), unit: (unit ?? "").slice(0, 12) };
 }
 
-function whatifRules(pitch: Pitch): string[] {
-  const r = STYLE_RULES.whatif;
+function whatifRules(pitch: Pitch, length: VideoLength): string[] {
+  const r = rulesFor("whatif", length);
   const counter = whatifCounter(pitch);
   const cast = episodeCast([]);
   return [
-    `STYLE WHAT IF. ${r.minBeats} to ${r.maxBeats} beats, ${r.seconds} seconds, 150 to 200 spoken words in total.`,
+    `STYLE WHAT IF. ${r.minBeats} to ${r.maxBeats} beats, ${r.seconds} seconds, ${spokenWords(length, "150 to 200")} spoken words in total.`,
     WHATIF_INTRO,
     `'characters' JSON (Pip plays "you"; you may add at most 2 extra one-off characters, like a pilot or a scientist): ${JSON.stringify(cast)}`,
     `'counter' JSON: ${JSON.stringify(counter)}. Pick a different label or unit only if it reads better.`,
@@ -271,12 +270,18 @@ function whatifRules(pitch: Pitch): string[] {
   ];
 }
 
+/** Spoken words for the whole video: the short number, or the long video's number. */
+function spokenWords(length: VideoLength, short: string): string {
+  return length === "long" ? "380 to 460" : short;
+}
+
 export function storyPrompt(pitch: Pitch, style: StoryStyle, length: VideoLength = "short", cast: Character[] = []): string {
-  const r = STYLE_RULES[style];
+  // Every number in the prompt comes from the same rules Vera checks against, for this length.
+  const r = rulesFor(style, length);
   const styleRules =
     style === "twist"
       ? [
-          `STYLE TWIST TALE. ${r.minBeats} to ${r.maxBeats} beats, ${r.seconds} seconds, 170 to 200 spoken words in total.`,
+          `STYLE TWIST TALE. ${r.minBeats} to ${r.maxBeats} beats, ${r.seconds} seconds, ${spokenWords(length, "170 to 200")} spoken words in total.`,
           "Each beat's narration is 1 or 2 short sentences. One third-person narrator tells it ('he', 'she' or a first name), fast and casual.",
           "Beat plan, in order:",
           "1. A strange act with NO context: the hero does something that looks foolish (beat 1 only).",
@@ -291,9 +296,9 @@ export function storyPrompt(pitch: Pitch, style: StoryStyle, length: VideoLength
           "Title: 4 to 8 words, title case, mystery framing. caption: the title only. hashtags: an empty list.",
         ]
       : style === "gossip"
-      ? gossipRules(pitch)
+      ? gossipRules(pitch, length)
       : style === "whatif"
-      ? whatifRules(pitch)
+      ? whatifRules(pitch, length)
       : style === "pov"
       ? [
           ...povRules(length),
@@ -372,4 +377,54 @@ export function editPrompt(story: Story, style: StoryStyle, issues: string[]): s
     "",
     'Answer as JSON: {"verdict":"approved|fixed|rejected","issues":["..."],"story":null}',
   ].join("\n");
+}
+
+/**
+ * Small local models often write far fewer beats than asked. This asks for one stretch of the
+ * story again, told in more, smaller beats, so the whole story reaches the length Vera checks for.
+ */
+export function expandPrompt(opts: {
+  story: Story;
+  style: StoryStyle;
+  length: VideoLength;
+  from: number; // first beat of the stretch, counted from 0
+  to: number; // last beat of the stretch, counted from 0, included
+  want: number; // how many beats the stretch should become
+}): string {
+  const { story, style, length, from, to, want } = opts;
+  const r = rulesFor(style, length);
+  const part = story.beats.slice(from, to + 1);
+  const voice =
+    style === "pov" || style === "hook"
+      ? "first person ('I'), like the rest of the story"
+      : style === "whatif"
+      ? "second person ('you'), present tense, like the rest of the story"
+      : style === "gossip"
+      ? `${TOWN.narrator}'s gossipy first person, like the rest of the story`
+      : "the same narrator voice as the rest of the story";
+  const prevValue = [...story.beats.slice(0, from)].reverse().find((b) => typeof b.value === "number")?.value;
+  const nextValue = story.beats.slice(to + 1).find((b) => typeof b.value === "number")?.value;
+  return [
+    `This ${style.toUpperCase()} story is too short: it has ${story.beats.length} beats and needs ${r.minBeats} to ${r.maxBeats}.`,
+    "Here is the whole story, one line per beat, so you know what happens:",
+    ...story.beats.map((b, i) => `${i + 1}. ${b.narration}${b.line ? ` ("${b.line}")` : ""}`),
+    "",
+    `Rewrite ONLY beats ${from + 1} to ${to + 1} as exactly ${want} beats.`,
+    "Tell the same events in the same order, but slower: add the small moments in between, reactions, details, a clue or a joke, so each beat is one quick picture.",
+    `Do not repeat what happens before beat ${from + 1} or after beat ${to + 1}, and do not end the story early.`,
+    `Narration is ${voice}: ONE short sentence per beat, ${r.minWords} to ${r.maxWords} words. Lines a character says are under ${r.maxLineWords} words, and most beats have no line.`,
+    `Characters (use their index in 'cast' and 'speaker'): ${story.characters.map((c, i) => `${i} = ${c.name}`).join(", ")}.`,
+    style === "whatif"
+      ? `Each beat has a 'value' for the counter (${story.counter?.label ?? "the counter"}${story.counter?.unit ? `, in ${story.counter.unit}` : ""}) that never goes down${typeof prevValue === "number" ? `, starting from at least ${prevValue}` : ""}${typeof nextValue === "number" ? ` and staying at or below ${nextValue}` : ""}. Every fact must be true.`
+      : "",
+    "'card' is null on every one of these beats.",
+    vocab(style),
+    "",
+    "The beats to rewrite:",
+    JSON.stringify(part),
+    "",
+    `Answer as JSON with ${want} beats: {"beats":[{"setting":"...","time":"...","narration":"...","cast":[{"who":0,"mood":"...","action":"..."}],"speaker":null,"line":null,"prop":null,"sfx":null${style === "whatif" ? ',"value":null' : ""}}]}`,
+  ]
+    .filter((l) => l !== "")
+    .join("\n");
 }
