@@ -83,6 +83,19 @@ export type GossipShape = { id: string; name: string; plan: string; beats: strin
 
 export const GOSSIP_SHAPES: GossipShape[] = [
   {
+    id: "what-if",
+    name: "What if...?",
+    plan: "Mabel asks one big 'what if' about Brickbury (what if gravity took a day off, what if animals could talk, what if it rained soup, what if everyone swapped voices) and plays out the day it happens, minute by minute, through each neighbor's very different problem.",
+    beats: [
+      "The question, asked straight to the viewer ('What if...?').",
+      "The first minute: one small, funny effect on Pip.",
+      "A little later: something bigger happens to the whole street.",
+      "Neighbor by neighbor: how THIS change hits each of them in a completely different way because of who they are (one beat or two each).",
+      "The unexpected upside nobody thought of.",
+      "Everything snaps back to normal, except for one funny thing that stays.",
+    ],
+  },
+  {
     id: "mystery",
     name: "Whodunit",
     plan: "Something has gone missing or been ruined, and Mabel walks us through the investigation like a detective show.",

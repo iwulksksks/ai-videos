@@ -325,6 +325,47 @@ const correction = (narration: string, cast: B["cast"]) => beat("town", "night",
 
 const GOSSIP_EPISODES: GossipEpisode[] = [
   {
+    // Flow: what if...?
+    pitch: {
+      title: "What If Brickbury Lost Gravity?",
+      logline: "Mabel imagines the day gravity takes a break in Brickbury, minute by minute.",
+      genre: "comedy",
+      twist: "Gravity never actually left, but Mrs. Plum sells the floating haircut anyway.",
+      era: "what-if",
+      skeptic: "Chef Mo, Coach Rhonda, Mrs. Plum",
+    },
+    build: () => {
+      const [PIP, MO, RHONDA, PLUM] = [0, 1, 2, 3];
+      return {
+        title: "What If Brickbury Lost Gravity?",
+        logline: "Mabel imagines the day gravity takes a break in Brickbury, minute by minute.",
+        mechanism: null,
+        characters: cast("gravity", "Chef Mo", "Coach Rhonda", "Mrs. Plum"),
+        beats: [
+          headline("Gravity Takes Day Off. Town Floats Away.", [on(PIP, "surprised"), on(PLUM, "surprised")]),
+          beat("town", "day", "What if Brickbury lost its gravity? For one whole day?", [on(PIP, "thinking")]),
+          beat("bedroom", "day", "Minute one. Pip's cereal floats right off the spoon.", [on(PIP, "surprised", "jump")], { sfx: "whoosh" }),
+          beat("town", "day", "Minute five. Every hat in town drifts away.", [on(PIP, "excited", "jump")]),
+          beat("cafe", "day", "Chef Mo? Worst morning of his life.", [on(MO, "scared", "jump")]),
+          beat("cafe", "day", "Flour everywhere. A permanent indoor snowstorm.", [on(MO, "scared", "shake")], { sfx: "whoosh" }),
+          beat("classroom", "day", "Coach Rhonda? Best morning of hers.", [on(RHONDA, "excited", "jump")]),
+          beat("classroom", "day", "Everyone can do a backflip. Nobody can land.", [on(RHONDA, "excited", "jump"), on(PIP, "scared", "jump")], { speaker: RHONDA, line: "Ten more laps. Up!" }),
+          beat("market", "day", "At Mrs. Plum's salon, every haircut comes out perfectly round.", [on(PLUM, "thinking", "jump")]),
+          beat("market", "day", "She'd call it a trend. And charge double.", [on(PLUM, "excited")], { speaker: PLUM, line: "It's called the Cloud." }),
+          beat("town", "sunset", "By lunch, half the town is tied to lamp posts.", [on(PIP, "scared", "jump")]),
+          beat("town", "sunset", "Me included. Pigeons need gravity too, honey.", [on(PIP, "thinking")]),
+          beat("town", "sunset", "But then Pip floats past the clock tower.", [on(PIP, "excited", "jump")]),
+          beat("town", "sunset", "And sees the whole town at once, for the first time.", [on(PIP, "happy", "jump")], { sfx: "ding" }),
+          beat("town", "night", "Then gravity comes back. All at once.", [on(PIP, "scared", "shake")], { sfx: "crash" }),
+          beat("plaza", "night", "Every hat in Brickbury lands on the wrong head.", [on(MO, "surprised"), on(RHONDA, "surprised"), on(PLUM, "surprised")]),
+          correction("Correction: Gravity did not leave. Mrs. Plum is selling Cloud haircuts anyway.", [on(PLUM, "excited"), on(PIP, "happy")]),
+        ],
+        caption: "the hats are still being returned",
+        hashtags: ["brickbury", "whatIf", "townGossip", "papercraft"],
+      };
+    },
+  },
+  {
     // Flow: whodunit
     pitch: {
       title: "Who Ate the Mayor's Cake?",
