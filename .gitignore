@@ -13,3 +13,4 @@ music/*
 next-env.d.ts
 *.tsbuildinfo
 .remotion-bundle/
+.tools/
