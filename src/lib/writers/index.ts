@@ -18,7 +18,7 @@ import {
 import { claudeAvailable, claudeJson } from "./claude";
 import { demoPitches, demoScout, demoStory, demoThemes } from "./demo";
 import { ollamaJson, ollamaStatus } from "./ollama";
-import { editPrompt, gossipNeighbors, pitchesPrompt, scoutPrompt, storyPrompt, themesPrompt } from "./prompts";
+import { editPrompt, gossipNeighbors, pitchesPrompt, scoutPrompt, storyPrompt, themesPrompt, whatifCounter } from "./prompts";
 import { planEpisodes, shapeById } from "../town";
 
 export type WriterName = "ollama" | "claude" | "demo";
@@ -101,7 +101,10 @@ export async function writePitches(opts: {
 }
 
 export async function writeStory(pitch: Pitch, style: StoryStyle, jobId?: number): Promise<Written<Story>> {
-  return write("script", StorySchema, storyPrompt(pitch, style), () => demoStory(pitch, style), jobId);
+  const r = await write("script", StorySchema, storyPrompt(pitch, style), () => demoStory(pitch, style), jobId);
+  // What If: fall back to the counter the pitch planned when the writer leaves it out.
+  if (style === "whatif" && !r.value.counter) r.value.counter = whatifCounter(pitch);
+  return r;
 }
 
 export async function editStory(

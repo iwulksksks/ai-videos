@@ -152,7 +152,7 @@ export const NewsCard: React.FC<{ beat: StagedBeat; frame: number; characters: C
 };
 
 /** Captions: 2 to 3 words at a time on a torn strip of paper near the top. */
-export const TornCaption: React.FC<{ chunk: CaptionChunk; frame: number; index: number }> = ({ chunk, frame, index }) => {
+export const TornCaption: React.FC<{ chunk: CaptionChunk; frame: number; index: number; top?: number }> = ({ chunk, frame, index, top = 250 }) => {
   const { fps } = useVideoConfig();
   const s = spring({ frame, fps, config: { damping: 13, stiffness: 300, mass: 0.5 } });
   const r = seeded(index * 97 + chunk.text.length);
@@ -160,7 +160,7 @@ export const TornCaption: React.FC<{ chunk: CaptionChunk; frame: number; index: 
   const bottom = Array.from({ length: 24 }, (_, i) => `${100 - (i / 23) * 100}% ${100 - r() * 9}%`).join(", ");
   const rot = (index % 2 ? 1 : -1) * (1.5 + r() * 1.5);
   return (
-    <AbsoluteFill style={{ justifyContent: "flex-start", alignItems: "center", paddingTop: 250 }}>
+    <AbsoluteFill style={{ justifyContent: "flex-start", alignItems: "center", paddingTop: top }}>
       <div style={{ transform: `rotate(${rot}deg) scale(${0.85 + 0.15 * s})`, filter: "drop-shadow(8px 10px 0 rgba(40,20,10,0.3))" }}>
         <div
           style={{
@@ -185,6 +185,78 @@ export const TornCaption: React.FC<{ chunk: CaptionChunk; frame: number; index: 
           })}
         </div>
       </div>
+    </AbsoluteFill>
+  );
+};
+
+/** Formats a counter value, switching to bigger units when it gets long (m to km, g to kg, and so on). */
+export function formatCounter(value: number, unit: string): string {
+  const up: Record<string, [number, string]> = { m: [1000, "km"], g: [1000, "kg"], ml: [1000, "L"], mm: [1000, "m"], s: [60, "min"], min: [60, "h"] };
+  let v = value;
+  let u = unit;
+  const big = up[u];
+  if (big && Math.abs(v) >= big[0] * 10) {
+    v = v / big[0];
+    u = big[1];
+  }
+  const digits = Math.abs(v) < 10 && v % 1 !== 0 ? 1 : 0;
+  const n = v.toLocaleString("en-US", { maximumFractionDigits: digits, minimumFractionDigits: 0 });
+  return u ? `${n} ${u}` : n;
+}
+
+/** What If: a paper tag at the top that ticks through the whole video (depth, days, socks...). */
+export const Counter: React.FC<{ label: string; unit: string; from: number; to: number; frame: number; duration: number }> = ({ label, unit, from, to, frame, duration }) => {
+  // Ticks quickly at the start of the beat, then holds so the number can be read.
+  const t = interpolate(frame, [4, Math.max(6, Math.min(duration * 0.6, 40))], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const ease = 1 - Math.pow(1 - t, 3);
+  const value = from + (to - from) * ease;
+  const shown = Math.abs(to - from) > 0 && t < 1 ? Math.round(value) : to;
+  const settle = to !== from ? spring({ frame: frame - Math.min(duration * 0.6, 40), fps: 30, config: { damping: 8, stiffness: 300 } }) : 1;
+  const pop = to !== from ? 1 + 0.12 * Math.sin(Math.min(1, settle) * Math.PI) : 1;
+  return (
+    <AbsoluteFill style={{ justifyContent: "flex-start", alignItems: "center", paddingTop: 150, pointerEvents: "none" }}>
+      <div style={{ transform: `rotate(-1.5deg) scale(${pop})`, filter: "drop-shadow(8px 10px 0 rgba(40,20,10,0.35))" }}>
+        <div style={{ background: "#231a14", color: "#fbf6ea", padding: "14px 34px 18px", borderRadius: 18, boxShadow: `0 0 0 7px ${CUT}`, textAlign: "center", minWidth: 520 }}>
+          <div style={{ fontFamily: FREDOKA, fontSize: 34, letterSpacing: 6, color: "#ffd24d" }}>{label.toUpperCase()}</div>
+          <div style={{ fontFamily: PLAYFAIR, fontSize: 96, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{formatCounter(shown, unit)}</div>
+        </div>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+/** What If: the opening question on a big paper sign, with "you" (Pip) peeking underneath. */
+export const QuestionCard: React.FC<{ beat: StagedBeat; frame: number; characters: Character[] }> = ({ beat, frame, characters }) => {
+  const { fps } = useVideoConfig();
+  const step = Math.floor(frame / 2) * 2;
+  const s = spring({ frame: step, fps, config: { damping: 11, stiffness: 140 } });
+  const q = spring({ frame: step - 10, fps, config: { damping: 7, stiffness: 220 } });
+  const hero = characters[beat.cast[0]?.who ?? 0];
+  // The card already says "What if...", so the big text carries on from it.
+  const words = beat.narration.replace(/^what if\s+/i, "").split(/\s+/);
+  return (
+    <AbsoluteFill style={{ background: "radial-gradient(circle at 50% 40%, #3d6fb0, #142640)", alignItems: "center", justifyContent: "center" }}>
+      <PaperFinish />
+      <div style={{ position: "absolute", top: 260, transform: `translateY(${(1 - s) * -900}px) rotate(${-3 + (1 - s) * 20}deg)` }}>
+        <div style={{ width: 900, background: "#fbf6ea", padding: "50px 56px 60px", boxShadow: `0 0 0 9px ${CUT}, 18px 24px 0 rgba(0,0,0,0.35)`, borderRadius: 10, color: "#231a14", textAlign: "center" }}>
+          <div style={{ fontFamily: FREDOKA, fontSize: 44, letterSpacing: 8, color: "#c8323c" }}>WHAT IF...</div>
+          <div style={{ fontFamily: PLAYFAIR, fontSize: beat.narration.length > 44 ? 76 : 92, lineHeight: 1.05, marginTop: 14 }}>
+            {words.map((w, i) => (
+              <span key={i} style={/^(you|your)$/i.test(w.replace(/[^\p{L}]/gu, "")) ? { background: "#ffe14d", padding: "0 8px", borderRadius: 6 } : undefined}>
+                {w}{" "}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div style={{ position: "absolute", right: -30, top: -70, fontFamily: PLAYFAIR, fontSize: 220, color: "#ffd24d", transform: `rotate(14deg) scale(${q})`, textShadow: `0 0 0 ${CUT}`, WebkitTextStroke: `8px ${CUT}`, paintOrder: "stroke" }}>?</div>
+      </div>
+      {hero && (
+        <svg viewBox="0 0 1080 700" width={1080} height={700} style={{ position: "absolute", bottom: 0, overflow: "visible" }}>
+          <g transform={`translate(540 ${760 - 120 * s}) scale(1.25)`}>
+            <PaperCharacterArt character={hero} mood={beat.cast[0]?.mood ?? "curious"} action="idle" frame={frame} facing={1} talking={false} seed={beat.seed} />
+          </g>
+        </svg>
+      )}
     </AbsoluteFill>
   );
 };

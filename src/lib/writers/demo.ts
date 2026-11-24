@@ -516,6 +516,90 @@ export function demoScout(videos: { title: string; viewsPerDay: number }[]): Sco
   return { topics, hooks: hooks.length ? hooks : [{ pattern: "Why [someone] did [something strange]", why: "Opens a mystery the viewer wants solved" }] };
 }
 
+// ---------------- What If (second person, a climbing counter, real facts) ----------------
+
+type WhatIfEpisode = { pitch: Pitch; build: () => Story };
+const ask = (narration: string, mood: B["cast"][number]["mood"] = "thinking") => beat("town", "day", narration, [on(0, mood)], { card: "question", sfx: "ding" });
+const step = (setting: B["setting"], time: B["time"], value: number | null, narration: string, mood: B["cast"][number]["mood"], action: B["cast"][number]["action"] = "idle", extra: Partial<B> = {}) =>
+  beat(setting, time, narration, [on(0, mood, action)], { value, ...extra });
+
+const WHATIF_EPISODES: WhatIfEpisode[] = [
+  {
+    pitch: {
+      title: "What If You Dug Straight Down?",
+      logline: "You start digging in your backyard and never stop, all the way through the Earth.",
+      genre: "science",
+      twist: "You pop out the other side, and from most land the other side is ocean.",
+      mechanism: "Deepest mine about 4 km, deepest hole (Kola) 12.3 km at about 180 C, crust about 35 km under land, outer core at 2,900 km, inner core at 5,150 km about as hot as the Sun's surface, center at 6,371 km.",
+      era: "DEPTH | m",
+    },
+    build: () => ({
+      title: "What If You Dug Straight Down?",
+      logline: "You start digging in your backyard and never stop, all the way through the Earth.",
+      mechanism: "Real depths and temperatures: deepest mine about 4 km, Kola borehole 12.3 km at 180 C, crust about 35 km, outer core from 2,900 km, solid inner core from 5,150 km, center at 6,371 km.",
+      counter: { label: "DEPTH", unit: "m" },
+      characters: episodeCast([]),
+      beats: [
+        ask("What if you dug straight down and never stopped?"),
+        step("forest", "day", 0, "You grab a shovel and start digging in your backyard.", "excited", "walk"),
+        step("forest", "day", 1, "One meter. Worms, roots, and a lost marble.", "happy"),
+        step("forest", "day", 10, "Ten meters. Your hole starts filling with water. That's groundwater.", "surprised", "idle", { sfx: "whoosh" }),
+        step("mine", "day", 30, "Thirty meters. Down here it's the same temperature all year round.", "thinking"),
+        step("mine", "night", 2212, "Two kilometers. You're deeper than the deepest cave anyone has ever found.", "excited", "jump"),
+        step("mine", "night", 4000, "Four kilometers. The deepest mines on Earth. The rock is hot like a sauna.", "scared", "shake"),
+        step("mine", "night", 12262, "Twelve kilometers. The deepest hole ever drilled. Scientists quit here: 180 degrees.", "scared", "idle", { speaker: 0, line: "Is it lunch yet?" }),
+        step("canyon", "night", 35000, "Thirty five kilometers. You're through the crust. Welcome to the mantle.", "surprised", "idle", { sfx: "rumble" }),
+        step("canyon", "sunset", 700000, "The rock is glowing hot, but it's squeezed so hard it stays solid.", "scared", "shake"),
+        step("canyon", "sunset", 2900000, "Two thousand nine hundred kilometers. The outer core. An ocean of liquid metal.", "scared", "shake", { sfx: "crash" }),
+        step("canyon", "sunset", null, "It's mostly iron, and its swirling makes Earth's magnetic field.", "thinking"),
+        step("canyon", "night", 5150000, "Five thousand kilometers. The inner core. As hot as the surface of the Sun.", "scared", "jump"),
+        step("canyon", "night", null, "And it's solid. The pressure is so huge the iron can't melt.", "surprised"),
+        step("canyon", "night", 6371000, "The center of the Earth. Gravity pulls you from every side, so you float.", "excited", "jump", { speaker: 0, line: "Wheee!" }),
+        step("canyon", "day", 12742000, "Keep digging and you come out the other side.", "excited", "jump", { sfx: "whoosh" }),
+        step("beach", "day", null, "From most land, the other side is ocean. So: splash.", "surprised", "jump", { sfx: "crash", speaker: 0, line: "Should've packed a towel." }),
+      ],
+      caption: "12,742 km and you still need a towel",
+      hashtags: ["whatIf", "science", "earth", "papercraft", "funfacts"],
+    }),
+  },
+  {
+    pitch: {
+      title: "What If You Climbed a Ladder to Space?",
+      logline: "You lean a ladder against the sky and climb past the clouds into space.",
+      genre: "space",
+      twist: "At space station height gravity is still about 90 percent, so you don't float; you're just very high and very tired.",
+      mechanism: "Tallest building 828 m, Everest 8,849 m with a third of the air, airliners at 11 km and minus 50 C, body fluids boil near 19 km, space starts at 100 km, the space station orbits at about 400 km at 28,000 km/h.",
+      era: "HEIGHT | m",
+    },
+    build: () => ({
+      title: "What If You Climbed a Ladder to Space?",
+      logline: "You lean a ladder against the sky and climb past the clouds into space.",
+      mechanism: "Gravity at 400 km is still about 90 percent of the surface; astronauts float because they fall around the Earth at about 28,000 km/h.",
+      counter: { label: "HEIGHT", unit: "m" },
+      characters: episodeCast([]),
+      beats: [
+        ask("What if you climbed a ladder all the way to space?"),
+        step("town", "day", 0, "You lean a really, really tall ladder against the sky.", "excited", "walk"),
+        step("town", "day", 30, "Thirty meters. Taller than most trees. Don't look down.", "happy", "jump"),
+        step("city", "day", 828, "Eight hundred meters. You just passed the tallest building in the world.", "excited", "jump"),
+        step("canyon", "day", 8849, "Eight thousand eight hundred meters. The top of Everest.", "surprised"),
+        step("canyon", "day", null, "Every breath up here holds a third of the air you're used to.", "scared", "shake", { speaker: 0, line: "I can't feel my toes." }),
+        step("city", "sunset", 11000, "Eleven kilometers. Planes cruise past. It's fifty below zero.", "scared", "shake", { sfx: "whoosh" }),
+        step("city", "sunset", 19000, "Nineteen kilometers. Without a pressure suit, the spit in your mouth would boil.", "scared", "shake"),
+        step("space", "sunset", 50000, "Fifty kilometers. The sky turns black in the middle of the day.", "surprised"),
+        step("space", "night", 100000, "One hundred kilometers. Congratulations. You're officially in space.", "excited", "jump", { sfx: "ding" }),
+        step("space", "night", null, "But you're not floating. Not even a little.", "thinking"),
+        step("space", "night", 400000, "Four hundred kilometers. The space station zooms by at twenty eight thousand kilometers an hour.", "surprised", "idle", { sfx: "whoosh" }),
+        step("space", "night", null, "Up here, gravity is still about ninety percent as strong as at home.", "thinking"),
+        step("space", "night", null, "Astronauts only float because they're falling around the Earth, super fast.", "surprised"),
+        step("space", "night", null, "You? You're just very tired and very, very high up.", "sad", "shake", { speaker: 0, line: "Is there a bathroom?" }),
+      ],
+      caption: "400 km up and still no elevator",
+      hashtags: ["whatIf", "space", "science", "papercraft", "funfacts"],
+    }),
+  },
+];
+
 export function demoThemes(): Theme[] {
   return [
     { theme: "Old tricks that looked foolish but were genius", why: "Ridicule-then-payoff tales built on a real trick are the most rewatched story shorts." },
@@ -532,6 +616,8 @@ export function demoPitches(style: StoryStyle, usedTitles: string[]): Pitch[] {
       ? TWIST_TALES.map((t) => t.pitch)
       : style === "gossip"
       ? GOSSIP_EPISODES.map((e) => e.pitch)
+      : style === "whatif"
+      ? WHATIF_EPISODES.map((e) => e.pitch)
       : style === "hook"
       ? HOOK_WORLDS.map((w) => ({
           title: w.title,
@@ -557,6 +643,10 @@ export function demoStory(pitch: Pitch, style: StoryStyle): Story {
   }
   if (style === "gossip") {
     const ep = GOSSIP_EPISODES.find((e) => e.pitch.title.toLowerCase() === base) ?? pick(r, GOSSIP_EPISODES);
+    return { ...ep.build(), title: pitch.title.slice(0, 80) };
+  }
+  if (style === "whatif") {
+    const ep = WHATIF_EPISODES.find((e) => e.pitch.title.toLowerCase() === base) ?? pick(r, WHATIF_EPISODES);
     return { ...ep.build(), title: pitch.title.slice(0, 80) };
   }
   if (style === "hook") {

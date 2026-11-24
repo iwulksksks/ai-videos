@@ -8,7 +8,7 @@ import { CharacterArt, motion } from "./art/Character";
 import { SKY, seeded } from "./art/palette";
 import { PropArt } from "./art/Props";
 import { PaperCharacterArt } from "./art/PaperCharacter";
-import { NewsCard, PAPER_LAYER_FILTER, PaperFinish, Pigeon, TornCaption } from "./Paper";
+import { Counter, NewsCard, PAPER_LAYER_FILTER, PaperFinish, Pigeon, QuestionCard, TornCaption } from "./Paper";
 import { HookCaption, NarratorBox, SingleWordCaption, SpeechBubble } from "./Text";
 
 const FEET_Y = 1560;
@@ -33,7 +33,7 @@ function camera(beat: StagedBeat, frame: number, style: StoryStyle): CameraState
       const lead = beat.cast[0];
       const cx = lead ? (0.5 - lead.x) * WIDTH : 0;
       // Toy-block people are taller, so frame them lower to keep the whole head in shot.
-      return { zoom: 1.45 + 0.08 * t + punch, x: cx * 1.2, y: style === "gossip" ? 470 : 260, tilt: 0 };
+      return { zoom: 1.45 + 0.08 * t + punch, x: cx * 1.2, y: style === "gossip" || style === "whatif" ? 470 : 260, tilt: 0 };
     }
     case "insert":
       return { zoom: 1 + 0.12 * t + punch, x: 0, y: 0, tilt: 0 };
@@ -123,7 +123,8 @@ export const Scene: React.FC<{
   characters: Character[];
   look: Look;
   style: StoryStyle;
-}> = ({ beat, index, characters, look, style }) => {
+  counter?: { label: string; unit: string } | null;
+}> = ({ beat, index, characters, look, style, counter }) => {
   const frame = useCurrentFrame();
   const cam = camera(beat, frame, style);
   const layers = sceneLayers(beat.setting, beat.time, `b${index}`);
@@ -141,8 +142,8 @@ export const Scene: React.FC<{
         frame >= c.from && frame < (i === beat.captions.length - 1 ? beat.durationInFrames : c.to) ? (
           style === "twist" ? (
             <SingleWordCaption key={i} chunk={c} frame={frame - c.from} low={beat.camera === "insert"} />
-          ) : style === "gossip" ? (
-            <TornCaption key={i} chunk={c} frame={frame - c.from} index={index * 10 + i} />
+          ) : style === "gossip" || style === "whatif" ? (
+            <TornCaption key={i} chunk={c} frame={frame - c.from} index={index * 10 + i} top={style === "whatif" ? 440 : 250} />
           ) : (
             <HookCaption key={i} chunk={c} frame={frame - c.from} />
           )
@@ -150,10 +151,17 @@ export const Scene: React.FC<{
       )
     );
 
-  const paper = style === "gossip";
-  if (paper && beat.card && beat.card !== "none") {
+  const paper = style === "gossip" || style === "whatif";
+  if (paper && beat.card === "question") {
+    return <QuestionCard beat={beat} frame={frame} characters={characters} />;
+  }
+  if (paper && (beat.card === "headline" || beat.card === "correction")) {
     return <NewsCard beat={beat} frame={frame} characters={characters} kind={beat.card} />;
   }
+  const counterTag =
+    style === "whatif" && counter && beat.counterTo != null ? (
+      <Counter label={counter.label} unit={counter.unit} from={beat.counterFrom ?? beat.counterTo} to={beat.counterTo} frame={frame} duration={beat.durationInFrames} />
+    ) : null;
 
   if (beat.camera === "insert" && beat.prop && beat.prop !== "none") {
     // A close-up of the mechanism: the set fades back, the object fills the frame.
@@ -170,7 +178,8 @@ export const Scene: React.FC<{
             </g>
           </svg>
         </AbsoluteFill>
-        {deep && <Lighting beat={beat} frame={frame} />}
+        {paper ? <PaperFinish /> : deep && <Lighting beat={beat} frame={frame} />}
+        {counterTag}
         {captions}
       </AbsoluteFill>
     );
@@ -237,7 +246,8 @@ export const Scene: React.FC<{
           style={style}
         />
       )}
-      {paper && <Pigeon frame={frame} talking={frame < beat.narrationFrames} enter={index === 1} />}
+      {style === "gossip" && <Pigeon frame={frame} talking={frame < beat.narrationFrames} enter={index === 1} />}
+      {counterTag}
       {captions}
     </AbsoluteFill>
   );

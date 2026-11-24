@@ -1,4 +1,4 @@
-// npm run render:sample [twist|hook|cozy|gossip] [2.5d|flat]
+// npm run render:sample [twist|hook|cozy|gossip|whatif] [2.5d|flat]
 // Renders a demo story end to end without the web app, to prove the video pipeline works.
 import fs from "node:fs";
 import path from "node:path";
@@ -20,7 +20,7 @@ async function main() {
   const { FPS } = await import("../src/lib/story");
 
   const arg = process.argv[2];
-  const style = arg === "cozy" || arg === "hook" || arg === "gossip" ? arg : "twist";
+  const style = arg === "cozy" || arg === "hook" || arg === "gossip" || arg === "whatif" ? arg : "twist";
   const look = process.argv[3] === "flat" ? "flat" : "2.5d";
   const pitch = demoPitches(style, [])[0];
   console.log(`Script Room: writing "${pitch.title}" (${style}, ${look})`);
