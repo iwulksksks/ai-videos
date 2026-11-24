@@ -127,7 +127,7 @@ export function pickBestIdea(): IdeaRow | null {
     s += i.twist.length > 20 ? 2 : 0;
     s += /\d/.test(i.twist + i.title) ? 1 : 0;
     if (style === "hook" && /(power|mark|rank|chosen|strongest|weakest|ceremony|secret|only)/i.test(i.logline + i.twist)) s += 3;
-    if (style === "twist") s += i.mechanism ? 4 : -4;
+    if (style === "twist" || style === "country") s += i.mechanism ? 4 : -4;
     if (style === "twist" && /^(why|how|the)\b/i.test(i.title)) s += 2;
     if (style === "gossip") {
       const recent = recentEpisodes().shapes;

@@ -147,10 +147,13 @@ function placeCast(cast: CastMember[], characters: Character[], camera: Camera):
 export function stageStory(story: Story, style: StoryStyle, audio: BeatAudio[]): StagedPlan {
   const names = story.characters.map((c) => c.name);
   const pad = style === "cozy" ? 0.7 : style === "hook" ? 0.25 : isPaper(style) ? 0.1 : 0.15;
-  const minSeconds = style === "cozy" ? 3.5 : style === "hook" ? 2.2 : style === "gossip" ? 1.5 : style === "whatif" || style === "pov" ? 1.7 : 1.8;
+  const minSeconds = style === "cozy" ? 3.5 : style === "hook" ? 2.2 : style === "gossip" ? 1.5 : style === "whatif" || style === "pov" || style === "country" ? 1.7 : 1.8;
   // What If: the counter carries its last value forward and ticks from there.
   let counterAt: number | null = null;
+  // Country Story: the luggage tag keeps the last place until the story moves on.
+  let placeAt: string | null = null;
   const beats = story.beats.map((beat, i) => {
+    if (beat.place && beat.place.trim()) placeAt = beat.place.trim();
     const counterFrom = counterAt;
     if (style === "whatif" && beat.value != null) counterAt = beat.value;
     const counterTo = style === "whatif" && beat.card !== "question" ? counterAt : null;
@@ -160,7 +163,8 @@ export function stageStory(story: Story, style: StoryStyle, audio: BeatAudio[]):
     const lineSec = hasLine ? (a.lineSeconds ?? readingSeconds(beat.line!)) : 0;
     const gap = hasLine ? 0.15 : 0;
     // Newspaper cards need a moment to spin in and be read.
-    const screenMin = isPaper(style) && beat.card && beat.card !== "none" ? 2.6 : 0;
+    // The fact postcard holds the most words, so it gets the longest look.
+    const screenMin = isPaper(style) && beat.card && beat.card !== "none" ? (beat.card === "fact" ? 3.6 : 2.6) : 0;
     const seconds = Math.max(minSeconds, screenMin, narrSec + gap + lineSec + pad);
     const durationInFrames = Math.round(seconds * FPS);
     const narrationFrames = Math.round(narrSec * FPS);
@@ -168,6 +172,7 @@ export function stageStory(story: Story, style: StoryStyle, audio: BeatAudio[]):
     const cast = placeCast(beat.cast.length ? beat.cast : [{ who: 0, mood: "happy", action: "idle" }], story.characters, camera);
     return {
       ...beat,
+      place: style === "country" ? placeAt : beat.place,
       cast,
       camera,
       durationInFrames,

@@ -1,4 +1,4 @@
-// npm run render:sample [twist|hook|cozy|gossip|whatif|pov] [2.5d|flat] [long]
+// npm run render:sample [twist|hook|cozy|gossip|whatif|pov|country] [2.5d|flat] [long]
 // "long" also cuts the TikTok clips into the clips folder.
 // Renders a demo story end to end without the web app, to prove the video pipeline works.
 import fs from "node:fs";
@@ -22,7 +22,7 @@ async function main() {
   const { renderClips } = await import("../src/lib/agents/clips");
 
   const arg = process.argv[2];
-  const style = arg === "cozy" || arg === "hook" || arg === "gossip" || arg === "whatif" || arg === "pov" ? arg : "twist";
+  const style = arg === "cozy" || arg === "hook" || arg === "gossip" || arg === "whatif" || arg === "pov" || arg === "country" ? arg : "twist";
   const length = process.argv.includes("long") ? "long" : "short";
   const look = process.argv[3] === "flat" ? "flat" : "2.5d";
   const pitch = demoPitches(style, [])[0];
