@@ -15,7 +15,7 @@ import {
   type StoryStyle,
   type Theme,
 } from "../story";
-import { HERO, NEIGHBORS, TOWN, episodeCast, shapeById, townFolk, type EpisodePlan } from "../town";
+import { GOSSIP_SHAPES, HERO, NEIGHBORS, TOWN, episodeCast, shapeById, townFolk, type EpisodePlan } from "../town";
 
 const TOWN_INTRO =
   `Town Gossip episodes all happen in ${TOWN.name}, a paper-cutout storybook town. Pip (${HERO.role}) is in every episode. ` +
@@ -79,11 +79,12 @@ export function pitchesPrompt(opts: {
       ? "Style TWIST TALE: a 60-second tale built on a REAL, checkable mechanism (a clever trick, an invention, a law of physics, a psychology effect or a true historical event). Someone does something that looks foolish, everyone laughs, the sensible choice seems right, then it fails and the hero's strange act turns out to be genius because of that mechanism. Characters and story are original; only the mechanism is real. Avoid mechanisms you are not sure about."
       : opts.style === "gossip"
       ? [
-          "Style TOWN GOSSIP: 60-second comedy episodes of small-town life that build from something tiny to something absurd, with a twist ending that makes people rewatch and comment.",
+          "Style TOWN GOSSIP: 60-second comedy episodes of small-town life, each told in a different story flow (a whodunit, a rewind, plan vs. reality, a nature documentary, a heist...), with an ending that makes people rewatch and comment.",
           TOWN_INTRO,
-          "Write each pitch for its own story shape and neighbors below. Make each one feel fresh: a different situation, different jokes, a different ending. Do not build every episode around a catchphrase; if one has a catchphrase, it must be new.",
+          "Each pitch has its own STORY FLOW below: the way the story is told, not just its topic. Invent a premise that suits that flow. Never use the pattern 'something spreads and everyone in town copies it one by one'.",
+          "Write each pitch for its own story flow and neighbors below. Make each one feel fresh: a different situation, different jokes, a different ending. Do not build every episode around a catchphrase; if one has a catchphrase, it must be new.",
           ...(opts.plans ?? []).map(
-            (p, i) => `Pitch ${i + 1}: shape "${p.shape.name}" (${p.shape.plan}) Neighbors: ${p.neighbors.map((n) => `${n.name} (${n.role})`).join("; ")}.`,
+            (p, i) => `Pitch ${i + 1}: story flow "${p.shape.name}" (${p.shape.plan}) Neighbors: ${p.neighbors.map((n) => `${n.name} (${n.role})`).join("; ")}.`,
           ),
         ].join("\n")
       : opts.style === "hook"
@@ -103,7 +104,7 @@ export function pitchesPrompt(opts: {
       ? `Do NOT reuse or closely copy these titles we already made: ${opts.usedTitles.slice(0, 60).join("; ")}.`
       : "",
     opts.style === "gossip"
-      ? `Pitch ${opts.count} episodes, in the order above. Each pitch: title (3 to 7 words, catchy), logline (one sentence), genre (one or two words), twist (the ending in one sentence), era (the shape's id: ${(opts.plans ?? []).map((p) => p.shape.id).join(", ")}, in order) and skeptic (the neighbors' names, comma separated, exactly as given).`
+      ? `Pitch ${opts.count} episodes, in the order above. Each pitch: title (3 to 7 words, catchy), logline (one sentence), genre (one or two words), twist (the ending in one sentence), era (the flow's id: ${(opts.plans ?? []).map((p) => p.shape.id).join(", ")}, in order) and skeptic (the neighbors' names, comma separated, exactly as given).`
       : opts.style === "twist"
       ? `Pitch ${opts.count} different original stories. Each pitch: title (4 to 8 words, title case, framed as a mystery like "Why ...", "How ... Worked" or "The ... That ...", no emoji or hashtags), logline (one sentence), genre (one or two words), twist (the payoff in one sentence), mechanism (the real trick or fact, explained correctly in one or two plain sentences), era (when and where it is set) and skeptic (who mocks the hero).`
       : `Pitch ${opts.count} different original stories. Each pitch: title (max 6 words), logline (one sentence), genre (one or two words) and twist (the surprise in one sentence).`,
@@ -152,11 +153,13 @@ function gossipRules(pitch: Pitch): string[] {
     "Characters for this episode (use exactly these, in this order, as 'characters', with these colors and accessories):",
     ...cast.map((c, i) => folkLine(c.name, i, i === 0 ? undefined : c.color)),
     `'characters' JSON: ${JSON.stringify(cast)}`,
-    shape ? `Story shape: "${shape.name}". ${shape.plan}` : "Story shape: build from something tiny to something absurd, then twist.",
+    `STORY FLOW: "${(shape ?? GOSSIP_SHAPES[0]).name}". ${(shape ?? GOSSIP_SHAPES[0]).plan}`,
+    "Build the middle of the episode on these steps, in this order (each step is one or more beats):",
+    ...(shape ?? GOSSIP_SHAPES[0]).beats.map((b, i) => `  ${i + 1}. ${b}`),
+    "Follow this flow closely: it is what makes this episode feel different from the others. Do NOT use the pattern 'something spreads and every neighbor joins in or copies it one by one'.",
     "Every scene should make sense for THIS situation: pick settings that fit it, and give each neighbor something only they would do.",
     `Beat 1 is the HEADLINE card ('card': 'headline'): its narration is a punchy, slightly wrong newspaper headline of 5 to 10 words that makes people need to know more (for example "Local Boy Steals Moon, Says Mayor"). Put the characters it is about in its cast. No line.`,
-    `Beat 2 is a cold open on the strangest or funniest moment, with ${TOWN.narrator} pulling the viewer in.`,
-    `Then ${TOWN.narrator} tells how it happened, escalating one neighbor at a time, each doing something only they would do.`,
+    `From beat 2, ${TOWN.narrator} tells the story following the flow above. Give each neighbor something only they would do.`,
     `The LAST beat is the CORRECTION card ('card': 'correction'): its narration starts with "Correction:" and reveals the twist in one funny sentence that flips the headline. Everything before it builds to it.`,
     `Narration: ${TOWN.narrator} speaks every beat in first person, ONE short sentence per beat, ideally 5 to 12 words, so the picture changes about every 3 seconds.`,
     `Characters may speak short lines (under ${r.maxLineWords} words), at most 6 in the episode. Don't repeat the same line over and over, and don't build the episode around a catchphrase.`,
@@ -234,7 +237,7 @@ export function editPrompt(story: Story, style: StoryStyle, issues: string[]): s
     style === "twist"
       ? "Check: beat 1 is a strange act with no context; a 'You see,' setup; one quoted mocking line; the sensible choice looks right, then fails; the mechanism is explained in plain words; it ends on the punch line with no cliffhanger. FACT CHECK: the 'mechanism' must be real and explained correctly. If it is wrong, made up, or you are not sure it is true, the verdict is 'rejected'."
       : style === "gossip"
-      ? "Check: Pip is character 0; beat 1 is a 'headline' card with a punchy headline; beat 2 is a cold open; Mabel the pigeon narrates in first person, gossipy and short; it escalates one neighbor at a time, each doing something only they would do; the last beat is a 'correction' card starting with 'Correction:' that lands the twist; no 'part 2' or 'follow'; it is actually funny; no catchphrase repeated over and over; it's about town life, not the internet; no real app, brand or person is named."
+      ? "Check: Pip is character 0; beat 1 is a 'headline' card with a punchy headline; Mabel the pigeon narrates in first person, gossipy and short; the middle follows one clear story flow (a whodunit, a rewind, plan vs. reality, two sides, a documentary, a heist, a week of days, a top five, a training montage, theories, or a new neighbor); it does NOT use the 'something spreads and everyone copies it one by one' pattern (if it does, rewrite it, verdict 'fixed'); each neighbor does something only they would do; the last beat is a 'correction' card starting with 'Correction:' that lands the twist; no 'part 2' or 'follow'; it is actually funny; no catchphrase repeated over and over; it's about town life, not the internet; no real app, brand or person is named."
       : style === "hook"
       ? "Check: first line states the world's rule; first person; underdog; clear reveal far beyond everyone; shocked reactions; ends on a cliffhanger; every narration line is short and punchy."
       : "Check: clear setup, problem, turn and payoff; gentle and funny; no moral lecture.",

@@ -74,23 +74,147 @@ export function townFolk(name: string): TownFolk | undefined {
   return TOWN_CAST.find((c) => c.name.toLowerCase().replace(/[\s.]+/g, "") === k);
 }
 
-// ---------- Story shapes: each episode gets a different kind of story ----------
+// ---------- Story flows: each episode is told in a different way ----------
+// A flow is not just a topic: it decides how the story is built, beat by beat. They are
+// deliberately different from each other, and none of them is "something spreads through
+// town and everyone copies it", so the videos don't all move the same way.
 
-export type GossipShape = { id: string; name: string; plan: string };
+export type GossipShape = { id: string; name: string; plan: string; beats: string[] };
 
 export const GOSSIP_SHAPES: GossipShape[] = [
-  { id: "mix-up", name: "The mix-up", plan: "Two things (or two neighbors' orders, letters, pets or bags) get swapped by accident. Each neighbor reacts to the wrong thing in their own way, the confusion spreads, and the swap back creates one last surprise." },
-  { id: "rumor", name: "The rumor", plan: "Someone half-hears something Pip said. It changes a little every time it's passed on, until the whole town believes something absurd. The truth comes out in a way that makes it worse, or better." },
-  { id: "new-rule", name: "The new rule", plan: "The mayor (or someone in charge) makes a well-meant new rule because of something Pip did. Everyone follows it way too hard, chaos follows, and the rule gets undone in an ironic way." },
-  { id: "contest", name: "The contest", plan: "A town contest (bake-off, pet show, science fair, garden prize, talent night). Everyone takes it far too seriously, sabotage and alliances happen, and the winner is the one nobody expected." },
-  { id: "lost", name: "The lost thing", plan: "Pip loses something that matters. The whole town joins the search and each neighbor's 'help' makes it bigger and sillier. It was somewhere ridiculous the whole time." },
-  { id: "gadget", name: "The gadget", plan: "Someone gets a new gadget or invention that promises to make life easier. It slowly takes over the town in funny ways, until one tiny thing breaks it." },
-  { id: "secret", name: "The secret", plan: "Pip is trusted with a secret (a surprise party, a gift, a hidden talent). Keeping it gets harder and harder as neighbors get close. It comes out at the worst moment, and the ending is warm." },
-  { id: "challenge", name: "The challenge", plan: "A silly challenge starts as a dare and spreads through town, getting harder each time someone tries it, until the least likely person tops everyone." },
-  { id: "job-swap", name: "Job for a day", plan: "Pip takes over a neighbor's job for one day (mail route, bakery, salon, police desk). Every task goes sideways in a new way, but he accidentally fixes something nobody else could." },
-  { id: "new-neighbor", name: "The new neighbor", plan: "Someone new moves to Brickbury (invent them, with a name, a color and one strange habit). The town guesses wild things about them. The real reason for the habit is sweet or funny." },
-  { id: "prank", name: "The prank", plan: "Pip plans a harmless prank on a neighbor. Every step goes wrong, it snowballs across town, and the prank ends up landing on Pip himself." },
-  { id: "power-out", name: "Everything stops", plan: "Something everyone depends on stops working for a day (power, phones, the town clock, the bridge). Everyone copes in their own odd way and the town is better for it, until it comes back." },
+  {
+    id: "mystery",
+    name: "Whodunit",
+    plan: "Something has gone missing or been ruined, and Mabel walks us through the investigation like a detective show.",
+    beats: [
+      "The crime: show what was there, then what's left (the empty plate, the broken thing).",
+      "Who takes the case and how seriously.",
+      "Suspect one: introduce them ('Suspect one.') and their shaky alibi.",
+      "Suspect two, with an even worse alibi.",
+      "Suspect three (often Pip), with evidence that looks bad.",
+      "The clue nobody noticed.",
+      "The reveal: the culprit is someone nobody suspected, for a funny or sweet reason.",
+    ],
+  },
+  {
+    id: "rewind",
+    name: "How did we get here?",
+    plan: "Open on a ridiculous final image with no context, then rewind and walk forward through time stamps until that image makes total sense.",
+    beats: [
+      "The absurd image, described plainly (someone on a roof, a cake in a tree).",
+      "'Let me rewind.' Jump back several hours.",
+      "Walk forward with a time stamp in every beat ('Five hours earlier,', 'Four hours earlier,'...). Each step is a small, reasonable choice that makes things a little worse.",
+      "'Which brings us back to now.' The opening image, now understood.",
+      "One more step nobody expected after it.",
+    ],
+  },
+  {
+    id: "plan-vs-reality",
+    name: "The plan vs. what happened",
+    plan: "Pip explains his perfect three-step plan, then we see each step as it really happened.",
+    beats: [
+      "What Pip wants and why it matters to him.",
+      "'Step one:', 'Step two:', 'Step three:' of the plan, told quickly and confidently.",
+      "'Here's what actually happened.'",
+      "Step one for real, going sideways.",
+      "Step two for real, going sideways in a new way.",
+      "Step three for real.",
+      "The result is the opposite of the plan, but somehow it works out (or almost).",
+    ],
+  },
+  {
+    id: "two-sides",
+    name: "Two sides",
+    plan: "The same day told twice: first how Pip saw it, then how the other person saw it. The second telling flips the meaning of every moment.",
+    beats: [
+      "Pip's version: he's sure a neighbor is up to something (angry with him, spying, plotting).",
+      "Three moments from Pip's view that look bad.",
+      "'Now here's what that neighbor saw.' Rewind.",
+      "The same three moments from the other side, each one meaning something completely different.",
+      "The two meet, and the truth is sweet or hilarious.",
+    ],
+  },
+  {
+    id: "documentary",
+    name: "Nature documentary",
+    plan: "Mabel narrates one neighbor like a wildlife documentary: their habitat, feeding habits, territory and rituals. Then something disturbs the habitat.",
+    beats: [
+      "Introduce the 'species' in documentary voice ('Here we see the rare Brickbury baker in his natural habitat.').",
+      "Two or three of their strange daily habits, observed closely.",
+      "An intruder enters the territory (usually Pip).",
+      "The creature's dramatic reaction.",
+      "A surprising new behavior nobody has ever recorded.",
+    ],
+  },
+  {
+    id: "heist",
+    name: "The heist",
+    plan: "Pip assembles a crew for a tiny, very important job (the last slice of pie, the front row at the fair, a hat back from the mayor).",
+    beats: [
+      "The target and why it's 'impossible'.",
+      "Recruit the crew: one beat per member, each with one silly skill.",
+      "The plan, in two quick beats.",
+      "The job: each crew member's moment, with one hitch.",
+      "It all goes wrong at once.",
+      "An unexpected way it still works, or a twist about the target.",
+    ],
+  },
+  {
+    id: "diary",
+    name: "One week",
+    plan: "The story moves day by day through one week ('Monday.', 'Tuesday.'...). Each day something small changes, and by the weekend it adds up to something nobody saw coming.",
+    beats: [
+      "What normal looks like, and the one small thing that's different on Monday.",
+      "One or two beats per day, Monday to Saturday, each opening with the day's name. Each day adds a new small detail.",
+      "Sunday: everything adds up to the reveal.",
+    ],
+  },
+  {
+    id: "top-five",
+    name: "Top five",
+    plan: "A countdown list told as mini scenes ('The five worst things to bring to the Brickbury picnic'). Each entry is its own tiny scene with a different neighbor.",
+    beats: [
+      "Name the list.",
+      "'Number five.' to 'Number two.': one or two beats each, each a quick scene with its own joke.",
+      "'And number one.' The biggest entry, which connects the others or flips the list.",
+    ],
+  },
+  {
+    id: "training",
+    name: "The training montage",
+    plan: "Someone has one week to learn something they're terrible at (dancing, whistling, riding a bike, baking) for a big moment. A mentor trains them.",
+    beats: [
+      "The big moment coming up and how bad they are right now.",
+      "They find an unlikely mentor.",
+      "Training: three quick failures, each funnier than the last.",
+      "One small breakthrough.",
+      "The big moment, which goes wrong in one way and right in a completely unexpected way.",
+    ],
+  },
+  {
+    id: "theories",
+    name: "The theories",
+    plan: "Mabel asks one question about a neighbor's odd habit ('Why does Gus wear sunglasses at night?'). Different neighbors each give a wild theory, shown as if it were true. Then the real answer.",
+    beats: [
+      "The question, and the odd habit shown plainly.",
+      "Theory one, from one neighbor, acted out as if it were real.",
+      "Theory two, even wilder.",
+      "Theory three, the wildest.",
+      "Mabel goes and finds out. The real answer is simple and much funnier, or sweeter.",
+    ],
+  },
+  {
+    id: "new-neighbor",
+    name: "The new neighbor",
+    plan: "Someone new moves to Brickbury (invent them, with a name, a color and one strange habit). We meet them through Pip's attempts to say hello, each one failing differently.",
+    beats: [
+      "The moving truck, and the one strange thing everyone notices.",
+      "Pip's first attempt to say hello, which goes wrong.",
+      "Second attempt, with a different neighbor's 'help'.",
+      "Third attempt, Pip's own idea.",
+      "The newcomer's strange habit finally makes sense, and they become friends.",
+    ],
+  },
 ];
 
 export function shapeById(id: string | null | undefined): GossipShape | undefined {
