@@ -8,6 +8,19 @@ type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
 export type OllamaStatus = { running: boolean; modelReady: boolean; models: string[] };
 
+let cached: { at: number; status: OllamaStatus } | null = null;
+
+/**
+ * Ollama's status, remembered for 20 seconds. The page asks for the studio's status every few
+ * seconds; while Ollama is busy writing, asking it each time made the page slow to load.
+ */
+export async function ollamaStatusCached(): Promise<OllamaStatus> {
+  if (cached && Date.now() - cached.at < 20_000) return cached.status;
+  const status = await ollamaStatus();
+  cached = { at: Date.now(), status };
+  return status;
+}
+
 export async function ollamaStatus(): Promise<OllamaStatus> {
   try {
     const res = await fetch(`${config.ollamaHost}/api/tags`, { signal: AbortSignal.timeout(2500) });
@@ -22,6 +35,8 @@ export async function ollamaStatus(): Promise<OllamaStatus> {
 }
 
 async function chat(messages: ChatMessage[], format: unknown): Promise<string> {
+  // Streamed, so a long story on a slower computer never hits the 5-minute "no answer yet" limit
+  // that a single all-at-once reply runs into.
   const res = await fetch(`${config.ollamaHost}/api/chat`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -29,14 +44,31 @@ async function chat(messages: ChatMessage[], format: unknown): Promise<string> {
       model: config.ollamaModel,
       messages,
       format,
-      stream: false,
+      stream: true,
       options: { temperature: 0.85, num_ctx: 8192 },
     }),
-    signal: AbortSignal.timeout(10 * 60 * 1000),
+    signal: AbortSignal.timeout(20 * 60 * 1000),
   });
-  if (!res.ok) throw new Error(`Ollama answered ${res.status}: ${await res.text().catch(() => "")}`);
-  const data = (await res.json()) as { message?: { content?: string } };
-  return data.message?.content ?? "";
+  if (!res.ok || !res.body) throw new Error(`Ollama answered ${res.status}: ${await res.text().catch(() => "")}`);
+  const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+  let text = "";
+  let pending = "";
+  const take = (line: string) => {
+    if (!line.trim()) return;
+    const part = JSON.parse(line) as { message?: { content?: string }; error?: string };
+    if (part.error) throw new Error(`Ollama: ${part.error}`);
+    text += part.message?.content ?? "";
+  };
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    pending += value;
+    const lines = pending.split("\n");
+    pending = lines.pop() ?? "";
+    lines.forEach(take);
+  }
+  take(pending);
+  return text;
 }
 
 function tryParse<T>(schema: z.ZodType<T>, text: string): { ok: true; value: T } | { ok: false; error: string } {
