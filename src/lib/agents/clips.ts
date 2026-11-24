@@ -12,9 +12,9 @@ import { stageStory, type BeatAudio } from "./art";
 import { renderVideo } from "./edit";
 import { makeMusic, makeSfx, pickMood } from "./sound";
 
-// A clip should run about 25 to 55 seconds.
-const MIN_SECONDS = 20;
-const MAX_SECONDS = 58;
+// A clip should run at least a minute (TikTok rewards videos over 1 minute), and at most 90 seconds.
+const MIN_SECONDS = 62;
+const MAX_SECONDS = 90;
 const MAX_CLIPS = 3;
 export const CLIP_END_TEXT = "Full story on YouTube";
 
@@ -55,7 +55,7 @@ function defaultHook(story: Story): string {
 }
 
 /**
- * Checks the writer's highlights (beat numbers from 1) and repairs them: in range, 20 to 60
+ * Checks the writer's highlights (beat numbers from 1) and repairs them: in range, 62 to 90
  * seconds long, no exact duplicates, at most 3. When the writer gave none, picks the opening,
  * the middle and the ending.
  */
@@ -63,6 +63,10 @@ export function fixHighlights(story: Story, style: StoryStyle): { highlights: Hi
   const issues: string[] = [];
   const n = story.beats.length;
   const secs = beatSeconds(story, style);
+  // A story shorter than a clip has nothing to cut: TikTok gets the whole video instead.
+  if (stretchSeconds(secs, 0, n - 1) - 2.2 < MIN_SECONDS + 10) {
+    return { highlights: [], issues: story.highlights?.length ? ["Too short to cut into 1-minute clips; TikTok gets the whole video"] : [] };
+  }
   const out: Highlight[] = [];
   const seen = new Set<string>();
   for (const h of story.highlights ?? []) {
@@ -71,7 +75,7 @@ export function fixHighlights(story: Story, style: StoryStyle): { highlights: Hi
       continue;
     }
     const [a, b] = fitStretch(secs, Math.min(h.start, h.end) - 1, Math.max(h.start, h.end) - 1);
-    if (a !== h.start - 1 || b !== h.end - 1) issues.push(`Adjusted a clip to beats ${a + 1}-${b + 1} so it runs 20 to 60 seconds`);
+    if (a !== h.start - 1 || b !== h.end - 1) issues.push(`Adjusted a clip to beats ${a + 1}-${b + 1} so it runs 1 to 1.5 minutes`);
     const key = `${a}-${b}`;
     if (seen.has(key)) continue;
     seen.add(key);
@@ -83,7 +87,7 @@ export function fixHighlights(story: Story, style: StoryStyle): { highlights: Hi
     const total = stretchSeconds(secs, 0, n - 1);
     const picks: [number, number][] = [];
     picks.push(fitStretch(secs, 0, Math.floor(n / 4)));
-    if (total > MAX_SECONDS * 1.6) {
+    if (total > MAX_SECONDS * 2.2) {
       const mid = Math.floor(n / 2);
       picks.push(fitStretch(secs, Math.floor(n / 3), mid));
     }

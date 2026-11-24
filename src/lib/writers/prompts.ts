@@ -74,7 +74,7 @@ function longRules(style: StoryStyle): string[] {
   return [
     `LENGTH: this is a LONG video for YouTube, about 2.5 minutes: ${r.minBeats} to ${r.maxBeats} beats, ${r.seconds} seconds, about 380 to 460 spoken words.`,
     "Keep every beat as short as the rules above say; the extra length comes from more story steps, not longer sentences. Where the rules above give a shorter length or word total, use these numbers instead.",
-    "Also return 'highlights': 2 or 3 stretches of the story that work as stand-alone TikTok clips of 25 to 55 seconds (about 8 to 18 beats each). Good picks: the opening with its rule or question, the biggest moment, and the ending with the twist.",
+    "Also return 'highlights': 2 or 3 stretches of the story that work as stand-alone TikTok clips of 65 to 85 seconds each (about 20 to 26 beats; never under one minute). Good picks: the opening with its rule or question, the biggest moment, and the ending with the twist.",
     "Each highlight: 'start' and 'end' are beat numbers counted from 1, both included. 'hook' is a NEW opening line of 6 to 14 words, in the same narrator's voice, that makes the clip make sense to someone who never saw the rest. Highlights may overlap. The last one should include the final beat.",
   ];
 }

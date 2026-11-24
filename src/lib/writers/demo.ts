@@ -668,9 +668,9 @@ const POV_EPISODES: PovEpisode[] = [
           beat(P, "night", "Mr. Fenn still won't. He just hums. Very loudly.", [on(2, "happy")], { speaker: 2, line: "Hmm hmm hmmm!" }),
         ],
         highlights: [
-          { start: 1, end: 14, hook: "I whistled one note after dark, and something whistled back." },
-          { start: 15, end: 26, hook: "Our town has a rule nobody can explain, so I followed the clues." },
-          { start: 31, end: 43, hook: "Everyone says whistling after dark wakes a ghost. So I tried it." },
+          { start: 1, end: 19, hook: "I whistled one note after dark, and something whistled back." },
+          { start: 15, end: 33, hook: "Our town has a rule nobody can explain, so I followed the clues." },
+          { start: 26, end: 43, hook: "Nobody in my town whistles after dark. Tonight I found out why." },
         ],
         caption: "The ghost was moths. It was always moths.",
         hashtags: ["povstory", "storytime", "papercraft", "mystery", "therealreason"],
