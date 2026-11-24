@@ -1,6 +1,7 @@
 // QA Lab (Vera): rule checks always, then an AI edit pass.
 import { editStory, type WriterName } from "../writers";
 import { STYLE_RULES, StorySchema, type Story, type StoryStyle } from "../story";
+import { HERO } from "../town";
 
 export type QaResult = {
   verdict: "approved" | "fixed" | "rejected";
@@ -28,8 +29,12 @@ export function ruleCheck(input: Story, style: StoryStyle): { story: Story; issu
   const fatal: string[] = [];
   const story: Story = structuredClone(input);
 
-  // Characters: unique names, at most 3.
-  if (story.characters.length > 3) {
+  // Town Gossip: Pip leads every episode; the neighbors around him change.
+  if ((style === "gossip" || style === "whatif") && story.characters[0]?.name.toLowerCase() !== HERO.name.toLowerCase()) {
+    issues.push("Pip isn't character 0 in this episode");
+  }
+  // Characters: unique names, at most 3 (Town Gossip has its fixed cast of 5).
+  if (style !== "gossip" && story.characters.length > 3) {
     story.characters = story.characters.slice(0, 3);
     issues.push("Trimmed the cast to 3 characters");
   }
@@ -70,7 +75,7 @@ export function ruleCheck(input: Story, style: StoryStyle): { story: Story; issu
       b.speaker = null;
       issues.push(`Beat ${i + 1}: speaker didn't exist`);
     }
-    if (b.line && b.line.trim() && b.speaker == null) b.speaker = b.cast[0].who;
+    if (b.line && b.line.trim() && b.speaker == null) b.speaker = b.cast[0]?.who ?? 0;
     if ((!b.line || !b.line.trim()) && b.speaker != null) b.speaker = null;
     if (b.line && !b.line.trim()) b.line = null;
     if (b.speaker != null && !b.cast.some((c) => c.who === b.speaker) && b.cast.length < 3) {
@@ -93,7 +98,7 @@ export function ruleCheck(input: Story, style: StoryStyle): { story: Story; issu
 
   // Hook and Twist Tale: dialogue is rare.
   if (style !== "cozy") {
-    const max = style === "twist" ? 3 : 4;
+    const max = style === "twist" || style === "whatif" ? 3 : style === "gossip" ? 6 : 4;
     const lines = story.beats.filter((b) => b.line);
     if (lines.length > max) {
       lines.slice(max).forEach((b) => {
@@ -116,6 +121,64 @@ export function ruleCheck(input: Story, style: StoryStyle): { story: Story; issu
     if (story.caption !== story.title || story.hashtags.length) {
       story.caption = story.title;
       story.hashtags = [];
+    }
+  }
+
+  if (style === "gossip") {
+    // The episode opens on a Brickbury Bugle headline and closes on its correction.
+    story.beats.forEach((b) => {
+      if (b.card === "none") b.card = null;
+    });
+    story.beats.forEach((b, i) => {
+      if (b.card && i !== 0 && i !== story.beats.length - 1) b.card = null;
+      if (b.card) {
+        b.line = null;
+        b.speaker = null;
+      }
+    });
+    if (story.beats[0].card !== "headline") {
+      story.beats.unshift({ ...story.beats[0], card: "headline", narration: story.title, line: null, speaker: null, prop: null, sfx: "ding" });
+      if (story.beats.length > r.maxBeats) story.beats.splice(Math.floor(story.beats.length / 2), 1);
+      issues.push("Added the newspaper headline opening");
+    }
+    if (story.beats[story.beats.length - 1].card !== "correction") issues.push("No closing correction card; the twist lands better as one");
+    const last = story.beats[story.beats.length - 1];
+    if (/\b(part 2|part two|to be continued|stay tuned|subscribe|follow)\b/i.test(last.narration)) {
+      issues.push("The ending teases more; Town Gossip should stop on the ironic twist");
+    }
+  }
+
+  if (style === "whatif") {
+    // Opens on the question card; the counter only climbs; no other cards.
+    story.beats.forEach((b, i) => {
+      if (b.card && (b.card !== "question" || i !== 0)) b.card = null;
+    });
+    if (story.beats[0].card !== "question") {
+      const q = /^what if/i.test(story.title) ? story.title.replace(/\??$/, "?") : `What if ${story.title}?`;
+      story.beats.unshift({ ...story.beats[0], card: "question", narration: q, line: null, speaker: null, prop: null, value: null, sfx: "ding" });
+      if (story.beats.length > r.maxBeats) story.beats.splice(Math.floor(story.beats.length / 2), 1);
+      issues.push("Added the question card opening");
+    }
+    const first = story.beats[0];
+    first.line = null;
+    first.speaker = null;
+    first.value = null;
+    if (!story.counter) issues.push("No counter set; the video will run without one");
+    let top = -Infinity;
+    let steps = 0;
+    story.beats.forEach((b, i) => {
+      if (b.value == null || !Number.isFinite(b.value)) return;
+      if (b.value < top) {
+        b.value = top;
+        issues.push(`Beat ${i + 1}: the counter went backwards, held it`);
+      } else if (b.value > top) steps++;
+      top = b.value;
+    });
+    if (story.counter && steps < 4) issues.push(`The counter only climbs ${steps} times; What If needs a clear escalation`);
+    if (!story.beats.slice(1).some((b) => /\byou(r)?\b/i.test(b.narration))) issues.push("Narration isn't in the second person ('you')");
+    const last = story.beats[story.beats.length - 1];
+    if (/\b(part 2|part two|to be continued|stay tuned|subscribe|follow)\b/i.test(last.narration)) {
+      issues.push("The ending teases more; What If should stop on the most extreme step");
     }
   }
 

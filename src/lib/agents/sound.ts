@@ -26,7 +26,9 @@ export async function recordVoices(
     const narrationFile = `beat-${String(i + 1).padStart(2, "0")}-narration.wav`;
     // Twist Tale: one brisk narrator (about 3 words a second) reads everything.
     const twist = style === "twist";
-    await speak(b.narration, path.join(jobDir, narrationFile), "narrator", twist ? { lengthScale: 0.9 } : {});
+    // Town Gossip: a quick, chatty narrator; townsfolk shout their lines in their own voices.
+    const brisk = twist ? { lengthScale: 0.9 } : style === "gossip" ? { lengthScale: 0.86 } : style === "whatif" ? { lengthScale: 0.88 } : {};
+    await speak(b.narration, path.join(jobDir, narrationFile), "narrator", brisk);
     onLine?.(++done, total);
     let lineFile: string | null = null;
     let lineSeconds: number | null = null;
@@ -45,6 +47,8 @@ export async function recordVoices(
 export function pickMood(story: Story, style: StoryStyle): MusicMood {
   if (style === "hook") return "epic";
   if (style === "twist") return "curious";
+  if (style === "gossip") return "playful";
+  if (style === "whatif") return "adventure";
   const text = `${story.title} ${story.logline} ${story.beats.map((b) => b.narration).join(" ")}`.toLowerCase();
   const night = story.beats.filter((b) => b.time === "night" || b.setting === "space").length;
   if (/(mystery|secret|strange|shadow|whisper|clue|missing)/.test(text)) return "mystery";

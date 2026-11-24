@@ -79,6 +79,8 @@ function Producer({ state, act, pending }: { state: StudioState; act: Act; pendi
               <option value="twist">Twist Tale (60s, real trick, loops)</option>
               <option value="hook">Hook (60-90s, underdog, Part 2?)</option>
               <option value="cozy">Cozy (30-45s, gentle tale)</option>
+              <option value="gossip">Town Gossip (60s, Brickbury comedy, loops)</option>
+              <option value="whatif">What If (60s, "what if you..." with a ticking counter, real facts)</option>
             </select>
           </label>
         </div>

@@ -18,7 +18,8 @@ import {
 import { claudeAvailable, claudeJson } from "./claude";
 import { demoPitches, demoScout, demoStory, demoThemes } from "./demo";
 import { ollamaJson, ollamaStatus } from "./ollama";
-import { editPrompt, pitchesPrompt, scoutPrompt, storyPrompt, themesPrompt } from "./prompts";
+import { editPrompt, gossipNeighbors, pitchesPrompt, scoutPrompt, storyPrompt, themesPrompt, whatifCounter } from "./prompts";
+import { planEpisodes, shapeById } from "../town";
 
 export type WriterName = "ollama" | "claude" | "demo";
 export type Written<T> = { value: T; engine: WriterName };
@@ -77,15 +78,33 @@ export async function writePitches(opts: {
   style: StoryStyle;
   count: number;
   niche?: ScoutInsights | null;
+  recent?: { shapes: string[]; neighbors: string[] }; // Town Gossip: what the last episodes used
 }): Promise<Written<Pitch[]>> {
-  const r = await write("research", PitchesSchema, pitchesPrompt(opts), () => ({
+  // Town Gossip: every pitch gets its own story shape and neighbors, avoiding recent ones.
+  const plans = opts.style === "gossip" ? planEpisodes(opts.count, opts.recent) : undefined;
+  const r = await write("research", PitchesSchema, pitchesPrompt({ ...opts, plans }), () => ({
     pitches: demoPitches(opts.style, opts.usedTitles).slice(0, opts.count),
   }));
-  return { value: r.value.pitches, engine: r.engine };
+  let pitches = r.value.pitches;
+  if (plans && r.engine !== "demo") {
+    // Keep the plan even if the writer forgot to echo it back.
+    pitches = pitches.map((p, i) => {
+      const plan = plans[i % plans.length];
+      return {
+        ...p,
+        era: shapeById(p.era)?.id ?? plan.shape.id,
+        skeptic: gossipNeighbors(p).length ? p.skeptic : plan.neighbors.map((n) => n.name).join(", "),
+      };
+    });
+  }
+  return { value: pitches, engine: r.engine };
 }
 
 export async function writeStory(pitch: Pitch, style: StoryStyle, jobId?: number): Promise<Written<Story>> {
-  return write("script", StorySchema, storyPrompt(pitch, style), () => demoStory(pitch, style), jobId);
+  const r = await write("script", StorySchema, storyPrompt(pitch, style), () => demoStory(pitch, style), jobId);
+  // What If: fall back to the counter the pitch planned when the writer leaves it out.
+  if (style === "whatif" && !r.value.counter) r.value.counter = whatifCounter(pitch);
+  return r;
 }
 
 export async function editStory(

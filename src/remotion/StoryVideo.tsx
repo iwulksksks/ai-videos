@@ -5,7 +5,7 @@ import type { VideoProps } from "../lib/story";
 import { Scene } from "./Scene";
 import { EndCard, TitleCard } from "./Text";
 
-const LEVELS = { hook: [0.42, 0.1], cozy: [0.38, 0.1], twist: [0.22, 0.05] } as const; // [full, under voices]
+const LEVELS = { hook: [0.42, 0.1], cozy: [0.38, 0.1], twist: [0.22, 0.05], gossip: [0.26, 0.06], whatif: [0.24, 0.06] } as const; // [full, under voices]
 const RAMP = 8;
 
 function speakingWindows(p: VideoProps): [number, number][] {
@@ -57,7 +57,7 @@ export const StoryVideo: React.FC<VideoProps> = (props) => {
         at += beat.durationInFrames;
         return (
           <Sequence key={i} from={from} durationInFrames={beat.durationInFrames} name={`Beat ${i + 1}`}>
-            <Scene beat={beat} index={i} characters={props.characters} look={props.look} style={props.style} />
+            <Scene beat={beat} index={i} characters={props.characters} look={props.look} style={props.style} counter={props.counter} />
             {beat.narrationAudio && <Html5Audio src={beat.narrationAudio} />}
             {beat.lineAudio && (
               <Sequence from={beat.lineStartFrame} name="Line">

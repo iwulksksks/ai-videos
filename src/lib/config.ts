@@ -17,7 +17,7 @@ export const config = {
   anthropicKey: env("ANTHROPIC_API_KEY"),
   claudeModel: env("CLAUDE_MODEL", "claude-opus-5-5"),
   forcedEngine: env("REELHOUSE_ENGINE") as "" | "ollama" | "claude" | "demo",
-  forcedStyle: env("REELHOUSE_STYLE") as "" | "hook" | "cozy",
+  forcedStyle: env("REELHOUSE_STYLE") as "" | "hook" | "cozy" | "gossip" | "whatif",
   narratorVoice: env("PIPER_NARRATOR_VOICE", "en_US-lessac-medium"),
   characterVoice: env("PIPER_CHARACTER_VOICE", "en_US-libritts_r-medium"),
   voiceOn: env("REELHOUSE_VOICE", "1") !== "0",

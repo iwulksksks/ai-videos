@@ -7,6 +7,8 @@ import { sceneLayers } from "./art/Backgrounds";
 import { CharacterArt, motion } from "./art/Character";
 import { SKY, seeded } from "./art/palette";
 import { PropArt } from "./art/Props";
+import { PaperCharacterArt } from "./art/PaperCharacter";
+import { Counter, NewsCard, PAPER_LAYER_FILTER, PaperFinish, Pigeon, QuestionCard, TornCaption } from "./Paper";
 import { HookCaption, NarratorBox, SingleWordCaption, SpeechBubble } from "./Text";
 
 const FEET_Y = 1560;
@@ -30,7 +32,8 @@ function camera(beat: StagedBeat, frame: number, style: StoryStyle): CameraState
     case "close": {
       const lead = beat.cast[0];
       const cx = lead ? (0.5 - lead.x) * WIDTH : 0;
-      return { zoom: 1.45 + 0.08 * t + punch, x: cx * 1.2, y: 260, tilt: 0 };
+      // Toy-block people are taller, so frame them lower to keep the whole head in shot.
+      return { zoom: 1.45 + 0.08 * t + punch, x: cx * 1.2, y: style === "gossip" || style === "whatif" ? 470 : 260, tilt: 0 };
     }
     case "insert":
       return { zoom: 1 + 0.12 * t + punch, x: 0, y: 0, tilt: 0 };
@@ -42,7 +45,7 @@ function camera(beat: StagedBeat, frame: number, style: StoryStyle): CameraState
 
 // Depth of field is faked with "atmospheric haze" (a see-through wash of sky color on far layers).
 // A real CSS blur looks similar but makes CPU rendering about 3 times slower.
-function Layer({ children, depth, cam, look, haze = 0, hazeColor = "#ffffff" }: { children: React.ReactNode; depth: number; cam: CameraState; look: Look; haze?: number; hazeColor?: string }) {
+function Layer({ children, depth, cam, look, haze = 0, hazeColor = "#ffffff", paper = false }: { children: React.ReactNode; depth: number; cam: CameraState; look: Look; haze?: number; hazeColor?: string; paper?: boolean }) {
   const deep = look === "2.5d";
   const f = deep ? depth : 1;
   const zoom = 1 + (cam.zoom - 1) * f;
@@ -54,10 +57,19 @@ function Layer({ children, depth, cam, look, haze = 0, hazeColor = "#ffffff" }: 
       style={{
         transform: `perspective(2400px) translate(${tx}px, ${ty}px) scale(${zoom}) rotateY(${rot}deg)`,
         transformOrigin: `50% ${(FEET_Y / HEIGHT) * 100}%`,
+        // Paper look: the layer becomes a sheet of cut card with a white edge and a shadow.
+        filter: paper && depth >= 1 ? PAPER_LAYER_FILTER : undefined,
       }}
     >
       <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} width={WIDTH} height={HEIGHT} style={{ overflow: "visible" }}>
-        {children}
+        {/* Paper look: every shape without its own outline gets a white cut edge. */}
+        {paper ? (
+          <g stroke="#fffaf0" strokeWidth={6} strokeLinejoin="round" style={{ paintOrder: "stroke" }}>
+            {children}
+          </g>
+        ) : (
+          children
+        )}
         {deep && haze > 0 && <rect x={-700} y={-700} width={WIDTH + 1400} height={HEIGHT + 1400} fill={hazeColor} opacity={haze} />}
       </svg>
     </AbsoluteFill>
@@ -111,7 +123,8 @@ export const Scene: React.FC<{
   characters: Character[];
   look: Look;
   style: StoryStyle;
-}> = ({ beat, index, characters, look, style }) => {
+  counter?: { label: string; unit: string } | null;
+}> = ({ beat, index, characters, look, style, counter }) => {
   const frame = useCurrentFrame();
   const cam = camera(beat, frame, style);
   const layers = sceneLayers(beat.setting, beat.time, `b${index}`);
@@ -127,10 +140,28 @@ export const Scene: React.FC<{
     ) : (
       beat.captions.map((c, i) =>
         frame >= c.from && frame < (i === beat.captions.length - 1 ? beat.durationInFrames : c.to) ? (
-          style === "twist" ? <SingleWordCaption key={i} chunk={c} frame={frame - c.from} low={beat.camera === "insert"} /> : <HookCaption key={i} chunk={c} frame={frame - c.from} />
+          style === "twist" ? (
+            <SingleWordCaption key={i} chunk={c} frame={frame - c.from} low={beat.camera === "insert"} />
+          ) : style === "gossip" || style === "whatif" ? (
+            <TornCaption key={i} chunk={c} frame={frame - c.from} index={index * 10 + i} top={style === "whatif" ? 440 : 250} />
+          ) : (
+            <HookCaption key={i} chunk={c} frame={frame - c.from} />
+          )
         ) : null,
       )
     );
+
+  const paper = style === "gossip" || style === "whatif";
+  if (paper && beat.card === "question") {
+    return <QuestionCard beat={beat} frame={frame} characters={characters} />;
+  }
+  if (paper && (beat.card === "headline" || beat.card === "correction")) {
+    return <NewsCard beat={beat} frame={frame} characters={characters} kind={beat.card} />;
+  }
+  const counterTag =
+    style === "whatif" && counter && beat.counterTo != null ? (
+      <Counter label={counter.label} unit={counter.unit} from={beat.counterFrom ?? beat.counterTo} to={beat.counterTo} frame={frame} duration={beat.durationInFrames} />
+    ) : null;
 
   if (beat.camera === "insert" && beat.prop && beat.prop !== "none") {
     // A close-up of the mechanism: the set fades back, the object fills the frame.
@@ -147,7 +178,8 @@ export const Scene: React.FC<{
             </g>
           </svg>
         </AbsoluteFill>
-        {deep && <Lighting beat={beat} frame={frame} />}
+        {paper ? <PaperFinish /> : deep && <Lighting beat={beat} frame={frame} />}
+        {counterTag}
         {captions}
       </AbsoluteFill>
     );
@@ -155,17 +187,30 @@ export const Scene: React.FC<{
 
   return (
     <AbsoluteFill style={{ backgroundColor: "#000", overflow: "hidden", opacity: fadeIn }}>
-      <Layer depth={0.35} cam={cam} look={look} haze={beat.camera === "close" ? 0.3 : 0.16} hazeColor={SKY[beat.time].bottom}>
+      <Layer depth={0.35} cam={cam} look={look} haze={paper ? 0.06 : beat.camera === "close" ? 0.3 : 0.16} hazeColor={SKY[beat.time].bottom} paper={paper}>
         {layers.far}
       </Layer>
-      <Layer depth={1} cam={cam} look={look}>
+      <Layer depth={1} cam={cam} look={look} paper={paper}>
         {layers.mid}
+      </Layer>
+      <Layer depth={1} cam={cam} look={look}>
         {beat.cast.map((c, i) => {
           const ch = characters[c.who];
           if (!ch) return null;
           const talking = speaking && c.who === beat.speaker && frame < beat.lineStartFrame + Math.max(beat.lineFrames, 24);
           return (
             <g key={i} transform={`translate(${c.x * WIDTH} ${FEET_Y + i * 6}) scale(${c.scale})`}>
+              {paper ? (
+                <PaperCharacterArt
+                  character={ch}
+                  mood={c.mood}
+                  action={c.action}
+                  frame={frame}
+                  facing={c.facing}
+                  talking={talking}
+                  seed={beat.seed + i * 31}
+                />
+              ) : (
               <CharacterArt
                 character={ch}
                 mood={c.mood}
@@ -178,14 +223,15 @@ export const Scene: React.FC<{
                 id={`${index}-${i}`}
                 seed={beat.seed + i * 31}
               />
+              )}
             </g>
           );
         })}
       </Layer>
-      <Layer depth={1.7} cam={cam} look={look}>
+      <Layer depth={1.7} cam={cam} look={look} paper={paper}>
         {layers.near}
       </Layer>
-      {deep && <Lighting beat={beat} frame={frame} />}
+      {paper ? <PaperFinish /> : deep && <Lighting beat={beat} frame={frame} />}
       {speaking && speakerCast && (
         <SpeechBubble
           text={beat.line!}
@@ -196,10 +242,12 @@ export const Scene: React.FC<{
             const sx = speakerCast.x * WIDTH + m.x * speakerCast.scale;
             return WIDTH / 2 + (sx - WIDTH / 2) * cam.zoom + cam.x;
           })()}
-          y={Math.max(260, FEET_Y - (360 * speakerCast.scale + 120) * cam.zoom + cam.y - (cam.zoom - 1) * 0)}
+          y={Math.max(260, FEET_Y - ((paper ? 470 : 360) * speakerCast.scale + 120) * cam.zoom + cam.y)}
           style={style}
         />
       )}
+      {style === "gossip" && <Pigeon frame={frame} talking={frame < beat.narrationFrames} enter={index === 1} />}
+      {counterTag}
       {captions}
     </AbsoluteFill>
   );

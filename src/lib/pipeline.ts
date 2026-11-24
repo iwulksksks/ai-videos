@@ -95,13 +95,22 @@ export async function pitchIdeas(opts: { theme?: Theme | null; count?: number } 
   const theme = opts.theme ?? pool[Math.floor(Math.random() * Math.max(1, pool.length))] ?? null;
   log("research", `Pip is pitching stories${theme ? ` about "${theme.theme}"` : " from the channel brief"}.`);
   const used = usedTitles();
-  const res = await writePitches({ theme, trends, brief: s.brief, usedTitles: used, style: s.style, count: opts.count ?? 4, niche });
+  const res = await writePitches({ theme, trends, brief: s.brief, usedTitles: used, style: s.style, count: opts.count ?? 4, niche, recent: recentEpisodes() });
   const usedLower = new Set(used.map((t) => t.toLowerCase()));
   const fresh = res.value.filter((p) => !usedLower.has(p.title.toLowerCase()));
   const ins = getDb().prepare("INSERT INTO ideas (title, logline, genre, twist, theme, mechanism, era, skeptic) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
   for (const p of fresh) ins.run(p.title, p.logline, p.genre, p.twist, theme?.theme ?? null, p.mechanism ?? null, p.era ?? null, p.skeptic ?? null);
   log("research", `Pitched ${fresh.length} new idea${fresh.length === 1 ? "" : "s"} (${res.engine}).`);
   return waitingIdeas();
+}
+
+/** Town Gossip: the story shapes and neighbors of the last few episodes, so the next ones differ. */
+function recentEpisodes(): { shapes: string[]; neighbors: string[] } {
+  const rows = getDb().prepare("SELECT era, skeptic FROM ideas WHERE status = 'used' ORDER BY id DESC LIMIT 4").all() as { era: string | null; skeptic: string | null }[];
+  return {
+    shapes: rows.map((r) => r.era ?? "").filter(Boolean),
+    neighbors: rows.slice(0, 2).flatMap((r) => (r.skeptic ?? "").split(",").map((n) => n.trim())).filter(Boolean),
+  };
 }
 
 /** Producer (Bea): picks the strongest waiting pitch. Simple scoring: punchy title, clear twist, fits the style. */
@@ -118,6 +127,11 @@ export function pickBestIdea(): IdeaRow | null {
     if (style === "hook" && /(power|mark|rank|chosen|strongest|weakest|ceremony|secret|only)/i.test(i.logline + i.twist)) s += 3;
     if (style === "twist") s += i.mechanism ? 4 : -4;
     if (style === "twist" && /^(why|how|the)\b/i.test(i.title)) s += 2;
+    if (style === "gossip") {
+      const recent = recentEpisodes().shapes;
+      if (i.era && recent.slice(0, 3).includes(i.era)) s -= 6; // don't make the same kind of story twice in a row
+      if (i.era && recent[0] === i.era) s -= 6;
+    }
     if (style === "cozy" && /(friend|tiny|little|cozy|home|cafe|warm)/i.test(i.logline + i.twist)) s += 3;
     s += i.theme ? 1 : 0;
     return s;

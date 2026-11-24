@@ -20,6 +20,8 @@ export const SETTINGS = [
   "mine",
   "market",
   "lab",
+  "town", // Brickbury main street (Town Gossip)
+  "plaza", // Brickbury town square (Town Gossip)
 ] as const;
 export const TIMES = ["day", "sunset", "night"] as const;
 export const COLORS = ["yellow", "pink", "blue", "green", "orange", "purple", "red", "teal"] as const;
@@ -31,7 +33,11 @@ export const CAMERAS = ["push", "pan-left", "pan-right", "still", "close", "inse
 export const PROPS = ["none", "gear", "lever", "bell", "jar", "rail", "pendulum", "wheel", "rope"] as const;
 export const SFX = ["none", "rumble", "snap", "crash", "whoosh", "ding"] as const;
 export const MUSIC_MOODS = ["playful", "tender", "mystery", "adventure", "dreamy", "epic", "curious"] as const;
-export const STYLES = ["twist", "hook", "cozy"] as const;
+// Town Gossip's newspaper cards: a "Brickbury Bugle" headline opens the episode and a
+// "correction" closes it with the twist.
+// What If opens on a "question" card instead.
+export const CARDS = ["none", "headline", "correction", "question"] as const;
+export const STYLES = ["twist", "hook", "cozy", "gossip", "whatif"] as const;
 export const LOOKS = ["2.5d", "flat"] as const;
 export const ENGINES = ["auto", "ollama", "claude", "demo"] as const;
 
@@ -48,6 +54,7 @@ export type Look = (typeof LOOKS)[number];
 export type Engine = (typeof ENGINES)[number];
 export type Prop = (typeof PROPS)[number];
 export type Sfx = (typeof SFX)[number];
+export type Card = (typeof CARDS)[number];
 
 // ---------- What the AI writers return ----------
 
@@ -86,7 +93,7 @@ export const CharacterSchema = z.object({
 export type Character = z.infer<typeof CharacterSchema>;
 
 export const CastSchema = z.object({
-  who: z.number().int().min(0).max(2),
+  who: z.number().int().min(0).max(4),
   mood: z.enum(EXPRESSIONS),
   action: z.enum(ACTIONS),
 });
@@ -97,18 +104,22 @@ export const BeatSchema = z.object({
   time: z.enum(TIMES),
   narration: z.string().min(1).max(260),
   cast: z.array(CastSchema).max(3),
-  speaker: z.number().int().min(0).max(2).nullable().optional(),
+  speaker: z.number().int().min(0).max(4).nullable().optional(),
   line: z.string().max(140).nullable().optional(),
   prop: z.enum(PROPS).nullable().optional(), // object to show in close-up
   sfx: z.enum(SFX).nullable().optional(), // sound effect at the start of the beat
+  card: z.enum(CARDS).nullable().optional(), // Town Gossip / What If: show this beat as a card
+  value: z.number().nullable().optional(), // What If: where the on-screen counter is during this beat
 });
 export type Beat = z.infer<typeof BeatSchema>;
 
 export const StorySchema = z.object({
   title: z.string().min(2).max(80),
   logline: z.string().min(4).max(240),
-  characters: z.array(CharacterSchema).min(1).max(3),
+  characters: z.array(CharacterSchema).min(1).max(5),
   mechanism: z.string().max(300).nullable().optional(),
+  // What If: the counter that ticks through the video, like { label: "DEPTH", unit: "m" }
+  counter: z.object({ label: z.string().min(1).max(28), unit: z.string().max(12) }).nullable().optional(),
   beats: z.array(BeatSchema).min(3).max(26),
   caption: z.string().min(4).max(400),
   hashtags: z.array(z.string().min(1).max(40)).max(12),
@@ -152,6 +163,8 @@ export type StagedBeat = Omit<Beat, "cast"> & {
   lineFrames: number;
   captions: CaptionChunk[];
   seed: number;
+  counterFrom?: number | null; // What If: the counter ticks from this value...
+  counterTo?: number | null; // ...to this one during the beat
 };
 
 export type VideoProps = {
@@ -164,6 +177,7 @@ export type VideoProps = {
   sfxSrc: string | null; // sound effects track (not ducked)
   musicLoop: boolean; // true for your own MP3s, which may be shorter than the video
   musicMood: MusicMood;
+  counter?: { label: string; unit: string } | null; // What If
   introFrames: number; // title card (cozy) or 0
   outroFrames: number; // "The End" / "Part 2?" card
 };
@@ -190,6 +204,22 @@ export const STYLE_RULES = {
     maxWords: 12,
     maxLineWords: 8,
     seconds: "60 to 90",
+  },
+  gossip: {
+    minBeats: 16,
+    maxBeats: 26,
+    minWords: 2,
+    maxWords: 14,
+    maxLineWords: 6,
+    seconds: "50 to 70",
+  },
+  whatif: {
+    minBeats: 12,
+    maxBeats: 24,
+    minWords: 3,
+    maxWords: 18,
+    maxLineWords: 6,
+    seconds: "45 to 70",
   },
   cozy: {
     minBeats: 5,

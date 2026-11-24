@@ -1,6 +1,7 @@
 // Built-in demo writer. No AI at all: hand-written templates filled in with a little randomness,
 // so the studio always works even with no Ollama and no Claude.
 import type { Character, Pitch, ScoutInsights, Story, StoryStyle, Theme } from "../story";
+import { episodeCast } from "../town";
 
 function rng(seedText: string) {
   let h = 2166136261;
@@ -311,6 +312,181 @@ const TWIST_TALES: TwistTale[] = [
   },
 ];
 
+
+// ---------------- Town Gossip (Brickbury episodes) ----------------
+// Each demo episode is a different story shape with a different set of neighbors.
+
+type GossipEpisode = { pitch: Pitch; build: () => Story };
+const on = (who: number, mood: B["cast"][number]["mood"], action: B["cast"][number]["action"] = "idle") => ({ who, mood, action });
+const cast = (seed: string, ...names: string[]) => episodeCast(names, rng(seed));
+
+const headline = (narration: string, cast: B["cast"]) => beat("town", "day", narration, cast, { card: "headline", sfx: "ding" });
+const correction = (narration: string, cast: B["cast"]) => beat("town", "night", narration, cast, { card: "correction", sfx: "crash" });
+
+const GOSSIP_EPISODES: GossipEpisode[] = [
+  {
+    // Flow: what if...?
+    pitch: {
+      title: "What If Brickbury Lost Gravity?",
+      logline: "Mabel imagines the day gravity takes a break in Brickbury, minute by minute.",
+      genre: "comedy",
+      twist: "Gravity never actually left, but Mrs. Plum sells the floating haircut anyway.",
+      era: "what-if",
+      skeptic: "Chef Mo, Coach Rhonda, Mrs. Plum",
+    },
+    build: () => {
+      const [PIP, MO, RHONDA, PLUM] = [0, 1, 2, 3];
+      return {
+        title: "What If Brickbury Lost Gravity?",
+        logline: "Mabel imagines the day gravity takes a break in Brickbury, minute by minute.",
+        mechanism: null,
+        characters: cast("gravity", "Chef Mo", "Coach Rhonda", "Mrs. Plum"),
+        beats: [
+          headline("Gravity Takes Day Off. Town Floats Away.", [on(PIP, "surprised"), on(PLUM, "surprised")]),
+          beat("town", "day", "What if Brickbury lost its gravity? For one whole day?", [on(PIP, "thinking")]),
+          beat("bedroom", "day", "Minute one. Pip's cereal floats right off the spoon.", [on(PIP, "surprised", "jump")], { sfx: "whoosh" }),
+          beat("town", "day", "Minute five. Every hat in town drifts away.", [on(PIP, "excited", "jump")]),
+          beat("cafe", "day", "Chef Mo? Worst morning of his life.", [on(MO, "scared", "jump")]),
+          beat("cafe", "day", "Flour everywhere. A permanent indoor snowstorm.", [on(MO, "scared", "shake")], { sfx: "whoosh" }),
+          beat("classroom", "day", "Coach Rhonda? Best morning of hers.", [on(RHONDA, "excited", "jump")]),
+          beat("classroom", "day", "Everyone can do a backflip. Nobody can land.", [on(RHONDA, "excited", "jump"), on(PIP, "scared", "jump")], { speaker: RHONDA, line: "Ten more laps. Up!" }),
+          beat("market", "day", "At Mrs. Plum's salon, every haircut comes out perfectly round.", [on(PLUM, "thinking", "jump")]),
+          beat("market", "day", "She'd call it a trend. And charge double.", [on(PLUM, "excited")], { speaker: PLUM, line: "It's called the Cloud." }),
+          beat("town", "sunset", "By lunch, half the town is tied to lamp posts.", [on(PIP, "scared", "jump")]),
+          beat("town", "sunset", "Me included. Pigeons need gravity too, honey.", [on(PIP, "thinking")]),
+          beat("town", "sunset", "But then Pip floats past the clock tower.", [on(PIP, "excited", "jump")]),
+          beat("town", "sunset", "And sees the whole town at once, for the first time.", [on(PIP, "happy", "jump")], { sfx: "ding" }),
+          beat("town", "night", "Then gravity comes back. All at once.", [on(PIP, "scared", "shake")], { sfx: "crash" }),
+          beat("plaza", "night", "Every hat in Brickbury lands on the wrong head.", [on(MO, "surprised"), on(RHONDA, "surprised"), on(PLUM, "surprised")]),
+          correction("Correction: Gravity did not leave. Mrs. Plum is selling Cloud haircuts anyway.", [on(PLUM, "excited"), on(PIP, "happy")]),
+        ],
+        caption: "the hats are still being returned",
+        hashtags: ["brickbury", "whatIf", "townGossip", "papercraft"],
+      };
+    },
+  },
+  {
+    // Flow: whodunit
+    pitch: {
+      title: "Who Ate the Mayor's Cake?",
+      logline: "The mayor's prize cake vanishes and Officer Dot interrogates three suspects, including Pip.",
+      genre: "mystery comedy",
+      twist: "The culprit is Mabel, the narrator.",
+      era: "mystery",
+      skeptic: "Mayor Bigsby, Officer Dot, Chef Mo, Nana Pearl",
+    },
+    build: () => {
+      const [PIP, MAYOR, DOT, MO, NANA] = [0, 1, 2, 3, 4];
+      return {
+        title: "Who Ate the Mayor's Cake?",
+        logline: "The mayor's prize cake vanishes and Officer Dot interrogates three suspects, including Pip.",
+        mechanism: null,
+        characters: cast("cake", "Mayor Bigsby", "Officer Dot", "Chef Mo", "Nana Pearl"),
+        beats: [
+          headline("Mayor's Prize Cake Vanishes. Town in Shock.", [on(MAYOR, "scared")]),
+          beat("plaza", "day", "This morning, the mayor's prize cake sat right here.", [on(MAYOR, "happy")]),
+          beat("plaza", "day", "By lunch? A plate and some crumbs.", [on(MAYOR, "scared", "shake")], { sfx: "crash" }),
+          beat("plaza", "day", "Officer Dot took the case. Very seriously.", [on(DOT, "angry", "enter")], { speaker: DOT, line: "Nobody leaves town." }),
+          beat("cafe", "day", "Suspect one. Chef Mo, who baked it.", [on(MO, "surprised")]),
+          beat("cafe", "day", "His alibi? Baking a second cake. Suspicious.", [on(MO, "scared", "shake")], { speaker: MO, line: "I bake when I'm nervous!" }),
+          beat("bedroom", "day", "Suspect two. Nana Pearl, famous cake lover.", [on(NANA, "thinking")]),
+          beat("bedroom", "day", "She was knitting a cake cozy. For which cake, Nana?", [on(NANA, "surprised")]),
+          beat("town", "day", "Suspect three. Pip. Frosting on his sleeve.", [on(PIP, "scared", "shake"), on(DOT, "angry")]),
+          beat("town", "day", "He said it was toothpaste. Nobody believed him.", [on(PIP, "sad")], { speaker: PIP, line: "It's minty!" }),
+          beat("plaza", "sunset", "Then Dot found the real clue.", [on(DOT, "thinking")], { sfx: "ding" }),
+          beat("plaza", "sunset", "Tiny footprints in the frosting. Three toes each.", [on(DOT, "surprised")]),
+          beat("plaza", "sunset", "Everyone slowly looked up. At my roof.", [on(PIP, "surprised"), on(MO, "surprised"), on(NANA, "surprised")]),
+          beat("plaza", "sunset", "Okay. Fine. I had a bite.", [on(MAYOR, "angry")]),
+          beat("plaza", "night", "A big bite. The whole cake, technically.", [on(MAYOR, "angry", "shake"), on(PIP, "happy")]),
+          correction("Correction: Pip did not eat the cake. Our reporter did. She regrets nothing.", [on(PIP, "happy"), on(MAYOR, "angry")]),
+        ],
+        caption: "the case is closed. the beak is full.",
+        hashtags: ["brickbury", "townGossip", "papercraft", "animation"],
+      };
+    },
+  },
+  {
+    // Flow: rewind
+    pitch: {
+      title: "Why Is Gus on the Roof?",
+      logline: "Grumpy Gus ends up on his roof in pajamas, and Mabel rewinds the day hour by hour to explain.",
+      genre: "comedy",
+      twist: "Gus isn't stuck: he discovered kites and refuses to come down.",
+      era: "rewind",
+      skeptic: "Gus, Bolt, Lulu",
+    },
+    build: () => {
+      const [PIP, GUS, BOLT, LULU] = [0, 1, 2, 3];
+      return {
+        title: "Why Is Gus on the Roof?",
+        logline: "Grumpy Gus ends up on his roof in pajamas, and Mabel rewinds the day hour by hour to explain.",
+        mechanism: null,
+        characters: cast("roof", "Gus", "Bolt", "Lulu"),
+        beats: [
+          headline("Grumpy Gardener on Roof, Refuses to Explain", [on(GUS, "angry")]),
+          beat("town", "sunset", "So Gus is on his roof. In pajamas. Holding a hose.", [on(GUS, "angry", "shake")]),
+          beat("town", "sunset", "How did we get here? Let me rewind.", [on(PIP, "thinking")], { sfx: "whoosh" }),
+          beat("bedroom", "day", "Six hours earlier, Lulu's kite got stuck.", [on(LULU, "sad", "shake")], { speaker: LULU, line: "It's in Gus's yard!" }),
+          beat("town", "day", "Five hours earlier, Pip asked Gus nicely.", [on(PIP, "happy"), on(GUS, "angry")], { speaker: GUS, line: "Off my lawn." }),
+          beat("workshop", "day", "Four hours earlier, Bolt built a kite-grabbing robot arm.", [on(BOLT, "excited")], { sfx: "ding" }),
+          beat("town", "day", "Three hours earlier, it grabbed Gus's hose instead.", [on(BOLT, "scared", "shake")], { sfx: "snap" }),
+          beat("town", "day", "And would not let go.", [on(GUS, "surprised", "jump")]),
+          beat("town", "sunset", "Two hours earlier, the hose dragged Gus up his ladder.", [on(GUS, "scared", "shake")]),
+          beat("town", "sunset", "One hour earlier, he reached the top. And saw it.", [on(GUS, "surprised")]),
+          beat("town", "sunset", "Lulu's kite. Stuck on his chimney.", [on(GUS, "thinking")]),
+          beat("town", "sunset", "Which brings us back to now.", [on(GUS, "angry")], { sfx: "whoosh" }),
+          beat("town", "sunset", "Gus could finally climb down.", [on(PIP, "excited"), on(LULU, "excited")]),
+          beat("town", "night", "Instead, he flew the kite. From the roof.", [on(GUS, "happy", "jump")]),
+          beat("town", "night", "Seventy years old. First kite ever.", [on(GUS, "excited", "jump")]),
+          correction("Correction: Gus is not stuck. He lives up there now. With the kite.", [on(GUS, "happy"), on(LULU, "happy")]),
+        ],
+        caption: "he's not coming down",
+        hashtags: ["brickbury", "townGossip", "papercraft", "animation"],
+      };
+    },
+  },
+  {
+    // Flow: plan vs. what happened
+    pitch: {
+      title: "Pip's Perfect Surprise Party",
+      logline: "Pip has a flawless three-step plan for Nana's surprise party, and then we see what actually happened.",
+      genre: "comedy",
+      twist: "Nana finds out, hides too, and surprises everyone, so Pip is the one who gets surprised.",
+      era: "plan-vs-reality",
+      skeptic: "Nana Pearl, Zoe, Chef Mo",
+    },
+    build: () => {
+      const [PIP, NANA, ZOE, MO] = [0, 1, 2, 3];
+      return {
+        title: "Pip's Perfect Surprise Party",
+        logline: "Pip has a flawless three-step plan for Nana's surprise party, and then we see what actually happened.",
+        mechanism: null,
+        characters: cast("party", "Nana Pearl", "Zoe", "Chef Mo"),
+        beats: [
+          headline("Local Boy Plans Perfect Surprise. Experts Doubtful.", [on(PIP, "excited"), on(NANA, "happy")]),
+          beat("bedroom", "day", "Pip had a perfect plan for Nana's birthday.", [on(PIP, "excited")]),
+          beat("bedroom", "day", "Step one. Zoe keeps Nana busy at the park.", [on(PIP, "thinking")]),
+          beat("bedroom", "day", "Step two. Chef Mo bakes a giant cake.", [on(PIP, "happy")]),
+          beat("bedroom", "day", "Step three. Everyone hides. Nana walks in. Surprise.", [on(PIP, "excited", "jump")]),
+          beat("bedroom", "day", "Now. Here's what actually happened.", [on(PIP, "happy")], { sfx: "whoosh" }),
+          beat("forest", "day", "Step one. Zoe kept Nana busy by telling her everything.", [on(ZOE, "excited"), on(NANA, "surprised")], { speaker: ZOE, line: "Oops. It's a surprise." }),
+          beat("cafe", "day", "Step two. Chef Mo baked a giant cake.", [on(MO, "excited")]),
+          beat("cafe", "day", "Too giant. It would not fit through the door.", [on(MO, "scared", "shake")], { sfx: "crash" }),
+          beat("bedroom", "sunset", "Step three. Everyone hid.", [on(PIP, "excited"), on(ZOE, "happy")]),
+          beat("bedroom", "sunset", "But Nana knew. So Nana hid too.", [on(NANA, "thinking")]),
+          beat("bedroom", "sunset", "Everyone waited in total silence. For an hour.", [on(PIP, "thinking"), on(ZOE, "sad")]),
+          beat("bedroom", "night", "Then Nana jumped out first.", [on(NANA, "excited", "jump")], { speaker: NANA, line: "Surprise!", sfx: "crash" }),
+          beat("bedroom", "night", "Pip screamed. Mo dropped the cake.", [on(PIP, "scared", "shake"), on(MO, "scared")]),
+          beat("bedroom", "night", "Nana called it her best birthday ever.", [on(NANA, "happy"), on(PIP, "happy")]),
+          correction("Correction: The surprise party worked. Pip was the one surprised.", [on(PIP, "surprised"), on(NANA, "excited")]),
+        ],
+        caption: "step four: never plan again",
+        hashtags: ["brickbury", "townGossip", "papercraft", "animation"],
+      };
+    },
+  },
+];
+
 // ---------------- Public demo API ----------------
 
 /** No-AI fallback for the Niche Scout: simple counting over the top titles. */
@@ -340,6 +516,88 @@ export function demoScout(videos: { title: string; viewsPerDay: number }[]): Sco
   return { topics, hooks: hooks.length ? hooks : [{ pattern: "Why [someone] did [something strange]", why: "Opens a mystery the viewer wants solved" }] };
 }
 
+// ---------------- What If (second person, a climbing counter, real facts) ----------------
+
+type WhatIfEpisode = { pitch: Pitch; build: () => Story };
+const ask = (narration: string, mood: B["cast"][number]["mood"] = "thinking") => beat("town", "day", narration, [on(0, mood)], { card: "question", sfx: "ding" });
+const step = (setting: B["setting"], time: B["time"], value: number | null, narration: string, mood: B["cast"][number]["mood"], action: B["cast"][number]["action"] = "idle", extra: Partial<B> = {}) =>
+  beat(setting, time, narration, [on(0, mood, action)], { value, ...extra });
+
+const WHATIF_EPISODES: WhatIfEpisode[] = [
+  {
+    pitch: {
+      title: "What If You Dug Straight Down?",
+      logline: "You start digging in your backyard and never stop, all the way through the Earth.",
+      genre: "science",
+      twist: "You pop out the other side, and from most land the other side is ocean.",
+      mechanism: "Deepest mine about 4 km, deepest hole (Kola) 12.3 km at about 180 C, crust about 35 km under land, outer core at 2,900 km, inner core at 5,150 km about as hot as the Sun's surface, center at 6,371 km.",
+      era: "DEPTH | m",
+    },
+    build: () => ({
+      title: "What If You Dug Straight Down?",
+      logline: "You start digging in your backyard and never stop, all the way through the Earth.",
+      mechanism: "Real depths and temperatures: deepest mine about 4 km, Kola borehole 12.3 km at 180 C, crust about 35 km, outer core from 2,900 km, solid inner core from 5,150 km, center at 6,371 km.",
+      counter: { label: "DEPTH", unit: "m" },
+      characters: episodeCast([]),
+      beats: [
+        ask("What if you dug straight down and never stopped?"),
+        step("forest", "day", 0, "You grab a shovel and start digging in your backyard.", "excited", "walk"),
+        step("forest", "day", 1, "One meter. Worms, roots, and a lost marble.", "happy"),
+        step("forest", "day", 10, "Ten meters. Your hole starts filling with water. That's groundwater.", "surprised", "idle", { sfx: "whoosh" }),
+        step("mine", "night", 2212, "Two kilometers. Deeper than the deepest cave ever found.", "excited", "jump"),
+        step("mine", "night", 4000, "Four kilometers. The deepest mines on Earth. Hot as a sauna.", "scared", "shake"),
+        step("mine", "night", 12262, "Twelve kilometers. The deepest hole ever drilled. Scientists quit here: 180 degrees.", "scared", "idle", { speaker: 0, line: "Is it lunch yet?" }),
+        step("canyon", "night", 35000, "35 kilometers. You're through the crust, into the mantle.", "surprised", "idle", { sfx: "rumble" }),
+        step("canyon", "sunset", 2900000, "2,900 kilometers. The outer core: an ocean of liquid metal.", "scared", "shake", { sfx: "crash" }),
+        step("canyon", "sunset", null, "It's mostly iron, and its swirling makes Earth's magnetic field.", "thinking"),
+        step("canyon", "night", 5150000, "5,150 kilometers. The inner core. As hot as the Sun's surface.", "scared", "jump"),
+        step("canyon", "night", null, "And it's solid. The pressure is so huge the iron can't melt.", "surprised"),
+        step("canyon", "night", 6371000, "The center of the Earth. Gravity pulls every way at once, so you float.", "excited", "jump", { speaker: 0, line: "Wheee!" }),
+        step("canyon", "day", 12742000, "Keep digging and you come out the other side.", "excited", "jump", { sfx: "whoosh" }),
+        step("beach", "day", null, "From most land, the other side is ocean. So: splash.", "surprised", "jump", { sfx: "crash", speaker: 0, line: "Should've packed a towel." }),
+      ],
+      caption: "12,742 km and you still need a towel",
+      hashtags: ["whatIf", "science", "earth", "papercraft", "funfacts"],
+    }),
+  },
+  {
+    pitch: {
+      title: "What If You Climbed a Ladder to Space?",
+      logline: "You lean a ladder against the sky and climb past the clouds into space.",
+      genre: "space",
+      twist: "At space station height gravity is still about 90 percent, so you don't float; you're just very high and very tired.",
+      mechanism: "Tallest building 828 m, Everest 8,849 m with a third of the air, airliners at 11 km and minus 50 C, body fluids boil near 19 km, space starts at 100 km, the space station orbits at about 400 km at 28,000 km/h.",
+      era: "HEIGHT | m",
+    },
+    build: () => ({
+      title: "What If You Climbed a Ladder to Space?",
+      logline: "You lean a ladder against the sky and climb past the clouds into space.",
+      mechanism: "Gravity at 400 km is still about 90 percent of the surface; astronauts float because they fall around the Earth at about 28,000 km/h.",
+      counter: { label: "HEIGHT", unit: "m" },
+      characters: episodeCast([]),
+      beats: [
+        ask("What if you climbed a ladder all the way to space?"),
+        step("town", "day", 0, "You lean a really, really tall ladder against the sky.", "excited", "walk"),
+        step("town", "day", 30, "Thirty meters. Taller than most trees. Don't look down.", "happy", "jump"),
+        step("city", "day", 828, "Eight hundred meters. You just passed the tallest building in the world.", "excited", "jump"),
+        step("canyon", "day", 8849, "Eight thousand eight hundred meters. The top of Everest.", "surprised"),
+        step("canyon", "day", null, "Every breath up here holds a third of the air you're used to.", "scared", "shake", { speaker: 0, line: "I can't feel my toes." }),
+        step("city", "sunset", 11000, "Eleven kilometers. Planes cruise past. It's fifty below zero.", "scared", "shake", { sfx: "whoosh" }),
+        step("city", "sunset", 19000, "Nineteen kilometers. Without a pressure suit, the spit in your mouth would boil.", "scared", "shake"),
+        step("space", "sunset", 50000, "Fifty kilometers. The sky turns black in the middle of the day.", "surprised"),
+        step("space", "night", 100000, "One hundred kilometers. Congratulations. You're officially in space.", "excited", "jump", { sfx: "ding" }),
+        step("space", "night", null, "But you're not floating. Not even a little.", "thinking"),
+        step("space", "night", 400000, "Four hundred kilometers. The space station zooms by at twenty eight thousand kilometers an hour.", "surprised", "idle", { sfx: "whoosh" }),
+        step("space", "night", null, "Up here, gravity is still about ninety percent as strong as at home.", "thinking"),
+        step("space", "night", null, "Astronauts only float because they're falling around the Earth, super fast.", "surprised"),
+        step("space", "night", null, "You? You're just very tired and very, very high up.", "sad", "shake", { speaker: 0, line: "Is there a bathroom?" }),
+      ],
+      caption: "400 km up and still no elevator",
+      hashtags: ["whatIf", "space", "science", "papercraft", "funfacts"],
+    }),
+  },
+];
+
 export function demoThemes(): Theme[] {
   return [
     { theme: "Old tricks that looked foolish but were genius", why: "Ridicule-then-payoff tales built on a real trick are the most rewatched story shorts." },
@@ -354,6 +612,10 @@ export function demoPitches(style: StoryStyle, usedTitles: string[]): Pitch[] {
   const all: Pitch[] =
     style === "twist"
       ? TWIST_TALES.map((t) => t.pitch)
+      : style === "gossip"
+      ? GOSSIP_EPISODES.map((e) => e.pitch)
+      : style === "whatif"
+      ? WHATIF_EPISODES.map((e) => e.pitch)
       : style === "hook"
       ? HOOK_WORLDS.map((w) => ({
           title: w.title,
@@ -376,6 +638,14 @@ export function demoStory(pitch: Pitch, style: StoryStyle): Story {
     const tale = TWIST_TALES.find((t) => t.pitch.title.toLowerCase() === base) ?? pick(r, TWIST_TALES);
     const s = tale.build(r);
     return { ...s, title: pitch.title.slice(0, 80), caption: pitch.title.slice(0, 80) };
+  }
+  if (style === "gossip") {
+    const ep = GOSSIP_EPISODES.find((e) => e.pitch.title.toLowerCase() === base) ?? pick(r, GOSSIP_EPISODES);
+    return { ...ep.build(), title: pitch.title.slice(0, 80) };
+  }
+  if (style === "whatif") {
+    const ep = WHATIF_EPISODES.find((e) => e.pitch.title.toLowerCase() === base) ?? pick(r, WHATIF_EPISODES);
+    return { ...ep.build(), title: pitch.title.slice(0, 80) };
   }
   if (style === "hook") {
     const world = HOOK_WORLDS.find((w) => w.title.toLowerCase() === base) ?? pick(r, HOOK_WORLDS);
