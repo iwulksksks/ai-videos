@@ -69,6 +69,7 @@ export function buildProps(opts: {
   sfxFile?: string | null;
   musicMood: MusicMood;
   baseUrl: string | null;
+  endText?: string | null;
 }): VideoProps {
   const url = (f: string | null) => (f && opts.baseUrl ? `${opts.baseUrl}/${encodeURIComponent(f)}` : null);
   return {
@@ -88,6 +89,7 @@ export function buildProps(opts: {
     musicMood: opts.musicMood,
     introFrames: opts.plan.introFrames,
     outroFrames: opts.plan.outroFrames,
+    endText: opts.endText ?? null,
   };
 }
 
@@ -101,6 +103,7 @@ export async function renderVideo(opts: {
   sfxFile?: string | null;
   musicMood: MusicMood;
   outFile: string;
+  endText?: string | null; // TikTok clips: the end card text
   onProgress?: (p: number) => void;
 }): Promise<void> {
   const { renderMedia, selectComposition } = await import("@remotion/renderer");

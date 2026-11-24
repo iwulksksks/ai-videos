@@ -80,10 +80,18 @@ function Producer({ state, act, pending }: { state: StudioState; act: Act; pendi
               <option value="hook">Hook (60-90s, underdog, Part 2?)</option>
               <option value="cozy">Cozy (30-45s, gentle tale)</option>
               <option value="gossip">Town Gossip (60s, Brickbury comedy, loops)</option>
-              <option value="whatif">What If (60s, "what if you..." with a ticking counter, real facts)</option>
+              <option value="whatif">What If ("what if you..." with a ticking counter, real facts)</option>
+              <option value="pov">POV Story (first person: the real reason behind a strange town rule)</option>
             </select>
           </label>
         </div>
+        <label>
+          Video length
+          <select value={form.length} onChange={(e) => set("length", e.target.value as typeof form.length)}>
+            <option value="long">Long, about 2.5 min, for YouTube, plus 2 or 3 best-moment clips for TikTok</option>
+            <option value="short">Short, about 1 min, the same video everywhere</option>
+          </select>
+        </label>
         <div className="row">
           <label>
             Look

@@ -1,6 +1,7 @@
 // Art Studio (Dot): stages every beat. Pure and deterministic: same story + same audio = same plan.
 import {
   FPS,
+  isPaper,
   type Beat,
   type CaptionChunk,
   type Camera,
@@ -109,7 +110,7 @@ const REACTION_MOODS = new Set(["surprised", "scared", "excited", "angry"]);
 function chooseCamera(beat: Beat, i: number, style: StoryStyle, total: number): Camera {
   const reaction = beat.cast.some((c) => REACTION_MOODS.has(c.mood));
   if (beat.prop && beat.prop !== "none") return "insert";
-  if (style === "gossip" || style === "whatif") {
+  if (isPaper(style)) {
     if (beat.card && beat.card !== "none") return "still";
     if (i === 0) return "close"; // open on a face
     if (reaction && beat.cast.length <= 2) return "close";
@@ -145,8 +146,8 @@ function placeCast(cast: CastMember[], characters: Character[], camera: Camera):
 
 export function stageStory(story: Story, style: StoryStyle, audio: BeatAudio[]): StagedPlan {
   const names = story.characters.map((c) => c.name);
-  const pad = style === "cozy" ? 0.7 : style === "hook" ? 0.25 : style === "gossip" || style === "whatif" ? 0.1 : 0.15;
-  const minSeconds = style === "cozy" ? 3.5 : style === "hook" ? 2.2 : style === "gossip" ? 1.5 : style === "whatif" ? 1.7 : 1.8;
+  const pad = style === "cozy" ? 0.7 : style === "hook" ? 0.25 : isPaper(style) ? 0.1 : 0.15;
+  const minSeconds = style === "cozy" ? 3.5 : style === "hook" ? 2.2 : style === "gossip" ? 1.5 : style === "whatif" || style === "pov" ? 1.7 : 1.8;
   // What If: the counter carries its last value forward and ticks from there.
   let counterAt: number | null = null;
   const beats = story.beats.map((beat, i) => {
@@ -159,7 +160,7 @@ export function stageStory(story: Story, style: StoryStyle, audio: BeatAudio[]):
     const lineSec = hasLine ? (a.lineSeconds ?? readingSeconds(beat.line!)) : 0;
     const gap = hasLine ? 0.15 : 0;
     // Newspaper cards need a moment to spin in and be read.
-    const screenMin = (style === "gossip" || style === "whatif") && beat.card && beat.card !== "none" ? 2.6 : 0;
+    const screenMin = isPaper(style) && beat.card && beat.card !== "none" ? 2.6 : 0;
     const seconds = Math.max(minSeconds, screenMin, narrSec + gap + lineSec + pad);
     const durationInFrames = Math.round(seconds * FPS);
     const narrationFrames = Math.round(narrSec * FPS);
@@ -183,7 +184,7 @@ export function stageStory(story: Story, style: StoryStyle, audio: BeatAudio[]):
   });
   const introFrames = style === "cozy" ? Math.round(2.5 * FPS) : 0;
   // Twist Tale, Town Gossip and What If stop dead on the punch line so the video loops.
-  const outroFrames = style === "twist" || style === "gossip" || style === "whatif" ? 0 : Math.round((style === "hook" ? 2.2 : 2.5) * FPS);
+  const outroFrames = style === "twist" || isPaper(style) ? 0 : Math.round((style === "hook" ? 2.2 : 2.5) * FPS);
   const totalFrames = introFrames + beats.reduce((s, b) => s + b.durationInFrames, 0) + outroFrames;
   return { beats, introFrames, outroFrames, totalFrames };
 }

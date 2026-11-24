@@ -1,6 +1,7 @@
 // QA Lab (Vera): rule checks always, then an AI edit pass.
 import { editStory, type WriterName } from "../writers";
-import { STYLE_RULES, StorySchema, type Story, type StoryStyle } from "../story";
+import { STYLE_RULES, StorySchema, rulesFor, type Story, type StoryStyle, type VideoLength } from "../story";
+import { fixHighlights } from "./clips";
 import { HERO } from "../town";
 
 export type QaResult = {
@@ -23,14 +24,15 @@ function trimWords(s: string, max: number) {
 }
 
 /** Fix what can be fixed by rules. Returns `fatal` problems that make the story unusable. */
-export function ruleCheck(input: Story, style: StoryStyle): { story: Story; issues: string[]; fatal: string[] } {
-  const r = STYLE_RULES[style];
+export function ruleCheck(input: Story, style: StoryStyle, length: VideoLength = "short"): { story: Story; issues: string[]; fatal: string[] } {
+  const r = rulesFor(style, length);
+  const short = STYLE_RULES[style];
   const issues: string[] = [];
   const fatal: string[] = [];
   const story: Story = structuredClone(input);
 
   // Town Gossip: Pip leads every episode; the neighbors around him change.
-  if ((style === "gossip" || style === "whatif") && story.characters[0]?.name.toLowerCase() !== HERO.name.toLowerCase()) {
+  if ((style === "gossip" || style === "whatif" || style === "pov") && story.characters[0]?.name.toLowerCase() !== HERO.name.toLowerCase()) {
     issues.push("Pip isn't character 0 in this episode");
   }
   // Characters: unique names, at most 3 (Town Gossip has its fixed cast of 5).
@@ -57,7 +59,9 @@ export function ruleCheck(input: Story, style: StoryStyle): { story: Story; issu
   }
   if (story.beats.length < r.minBeats) {
     const shortBy = r.minBeats - story.beats.length;
-    if (shortBy > 2) fatal.push(`Only ${story.beats.length} beats; ${style} stories need at least ${r.minBeats}`);
+    // A long story that came back short still works as a normal-length video.
+    if (length === "long" && story.beats.length >= short.minBeats) issues.push(`Shorter than a long video should be (${story.beats.length} beats, aim for ${r.minBeats})`);
+    else if (shortBy > 2) fatal.push(`Only ${story.beats.length} beats; ${style} stories need at least ${r.minBeats}`);
     else issues.push(`A little short (${story.beats.length} beats), allowed`);
   }
 
@@ -98,7 +102,7 @@ export function ruleCheck(input: Story, style: StoryStyle): { story: Story; issu
 
   // Hook and Twist Tale: dialogue is rare.
   if (style !== "cozy") {
-    const max = style === "twist" || style === "whatif" ? 3 : style === "gossip" ? 6 : 4;
+    const max = (style === "twist" || style === "whatif" ? 3 : style === "gossip" ? 6 : style === "pov" ? 5 : 4) * (length === "long" ? 2 : 1);
     const lines = story.beats.filter((b) => b.line);
     if (lines.length > max) {
       lines.slice(max).forEach((b) => {
@@ -112,7 +116,8 @@ export function ruleCheck(input: Story, style: StoryStyle): { story: Story; issu
   if (style === "twist") {
     if (!story.mechanism || story.mechanism.trim().length < 15) fatal.push("No real mechanism explains the ending");
     const words = story.beats.reduce((n, b) => n + wordCount(b.narration) + (b.line ? wordCount(b.line) : 0), 0);
-    if (words < 120 || words > 260) issues.push(`About ${words} spoken words; Twist Tales aim for 170 to 200`);
+    const k = length === "long" ? 2.3 : 1;
+    if (words < 120 * k || words > 260 * k) issues.push(`About ${words} spoken words; Twist Tales aim for ${Math.round(170 * k)} to ${Math.round(200 * k)}`);
     const last = story.beats[story.beats.length - 1];
     if (/\b(part 2|part two|to be continued|stay tuned|subscribe)\b/i.test(last.narration)) {
       last.narration = last.narration.replace(/\s*(part 2|part two|to be continued|stay tuned|subscribe)[^.!?]*[.!?]?/gi, "").trim() || last.narration;
@@ -182,6 +187,24 @@ export function ruleCheck(input: Story, style: StoryStyle): { story: Story; issu
     }
   }
 
+  if (style === "pov") {
+    const last = story.beats[story.beats.length - 1];
+    if (/\b(part 2|part two|to be continued|stay tuned|subscribe|follow)\b/i.test(last.narration)) {
+      issues.push("The ending teases more; POV stories end on the real reason and a small joke");
+    }
+    if (!story.beats.some((b) => /\b(I|my|me)\b/.test(b.narration))) issues.push("Narration isn't in the first person ('I')");
+    if (!story.beats.some((b) => /real reason/i.test(b.narration))) issues.push("No clear 'The real reason?' reveal");
+  }
+
+  // Long videos: check the stretches that become TikTok clips.
+  if (length === "long") {
+    const fixed = fixHighlights(story, style);
+    story.highlights = fixed.highlights;
+    issues.push(...fixed.issues);
+  } else if (story.highlights) {
+    story.highlights = null;
+  }
+
   story.hashtags = story.hashtags
     .map((h) => h.replace(/^#+/, "").replace(/\s+/g, ""))
     .filter(Boolean)
@@ -196,8 +219,8 @@ export function ruleCheck(input: Story, style: StoryStyle): { story: Story; issu
   return { story, issues, fatal };
 }
 
-export async function runQa(story: Story, style: StoryStyle, jobId?: number): Promise<QaResult> {
-  const rules = ruleCheck(story, style);
+export async function runQa(story: Story, style: StoryStyle, jobId?: number, length: VideoLength = "short"): Promise<QaResult> {
+  const rules = ruleCheck(story, style, length);
   if (rules.fatal.length) return { verdict: "rejected", issues: [...rules.fatal, ...rules.issues], story: null, editor: "rules" };
 
   let current = rules.story;
@@ -209,7 +232,10 @@ export async function runQa(story: Story, style: StoryStyle, jobId?: number): Pr
     issues = [...issues, ...edit.value.issues.filter((i) => !issues.includes(i))];
     if (edit.value.verdict === "rejected") return { verdict: "rejected", issues, story: null, editor };
     if (edit.value.verdict === "fixed" && edit.value.story) {
-      const again = ruleCheck(edit.value.story, style);
+      // Keep the clip stretches if the editor dropped them but kept the same beats.
+      const edited = edit.value.story;
+      if (!edited.highlights?.length && current.highlights?.length && edited.beats.length === current.beats.length) edited.highlights = current.highlights;
+      const again = ruleCheck(edited, style, length);
       if (!again.fatal.length) current = again.story;
     }
   } catch {

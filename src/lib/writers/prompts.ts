@@ -9,10 +9,14 @@ import {
   SETTINGS,
   STYLE_RULES,
   TIMES,
+  isPaper,
+  rulesFor,
+  type VideoLength,
   type Pitch,
   type ScoutInsights,
   type Story,
   type StoryStyle,
+  type Character,
   type Theme,
 } from "../story";
 import { GOSSIP_SHAPES, HERO, NEIGHBORS, TOWN, episodeCast, shapeById, townFolk, type EpisodePlan } from "../town";
@@ -29,6 +33,51 @@ const WHATIF_INTRO =
   "A counter at the top of the screen (depth, height, days, speed, socks...) climbs through the whole video, and every step is bigger, stranger and worse than the last. " +
   "Every step is a REAL, checkable fact (a real depth, record, temperature, body effect or law of physics), told in plain words a kid understands. " +
   "It opens on the question and ends on the most extreme step with a funny final line, so the video loops.";
+
+const POV_INTRO =
+  `POV Story videos are first-person mysteries told by Pip (${HERO.role}), a paper-cutout puppet in ${TOWN.name}, the paper-cutout storybook town. ` +
+  "Each one starts from ONE strange rule everybody in town follows without knowing why (nobody whistles after dark, every door is painted twice a year, the bakery never sells bread on Tuesdays). " +
+  "Pip is the one kid who asks why, follows the clues, and finds THE REAL REASON, which is surprising, funny or kind, and makes sense of every clue. " +
+  "No chosen ones, no deadly trials or games, no paradise, no villains taking over the town, no rules about colors, and no little sister. Stories come from town life, not the internet.";
+
+function povRules(length: VideoLength): string[] {
+  const r = rulesFor("pov", length);
+  return [
+    `STYLE POV STORY. ${r.minBeats} to ${r.maxBeats} beats, ${r.seconds} seconds.`,
+    POV_INTRO,
+    "Narration is FIRST PERSON: Pip (character 0) tells it and says 'I', past tense, casual and quick, like telling a friend.",
+    `ONE short sentence per beat, ideally ${r.minWords + 3} to ${r.maxWords} words, so the picture changes about every 3 seconds.`,
+    "Story flow, in this order (each step is one or more beats):",
+    "  1. Beat 1 states the rule as a plain fact of life, 6 to 14 words, like 'In Brickbury, nobody is allowed to whistle after dark.'",
+    "  2. How the town lives with it: two or three quick, funny specifics.",
+    "  3. Why it matters to me: the rule gets in MY way, or I'm the only one who asks why.",
+    "  4. The day it happens: I break the rule or start asking, and something odd happens.",
+    "  5. Three clues, each from a different neighbor or place, and each one changes what I think. Start them 'First clue:', 'Second clue:', 'Last clue:'.",
+    "  6. The scary theory everyone believes, and for a moment it looks true.",
+    "  7. The real reason, revealed in two or three beats: surprising, funny or kind, and it explains every clue. Start the reveal beat with 'The real reason?'",
+    "  8. What changes after, and a last beat that is a small joke calling back to the rule. No 'part 2', no 'follow for more'.",
+    `Neighbors may say short lines (under ${r.maxLineWords} words), at most 5 in the story.`,
+    "Use settings that fit each step and change them as you go (town, plaza, market, cafe, bedroom, forest, harbor, workshop...).",
+    "Title: 'The Real Reason' plus the rule, 5 to 10 words, title case (like 'The Real Reason Nobody Whistles After Dark'). caption: one short line. hashtags: 4 to 6.",
+  ];
+}
+
+/** Long videos ask for the clip stretches in the answer too. */
+function withHighlights(format: string, length: VideoLength): string {
+  if (length !== "long") return format;
+  return format.replace('"caption":"..."', '"highlights":[{"start":1,"end":12,"hook":"..."}],"caption":"..."');
+}
+
+/** Long videos: more story, plus the stretches that become TikTok clips. */
+function longRules(style: StoryStyle): string[] {
+  const r = rulesFor(style, "long");
+  return [
+    `LENGTH: this is a LONG video for YouTube, about 2.5 minutes: ${r.minBeats} to ${r.maxBeats} beats, ${r.seconds} seconds, about 380 to 460 spoken words.`,
+    "Keep every beat as short as the rules above say; the extra length comes from more story steps, not longer sentences. Where the rules above give a shorter length or word total, use these numbers instead.",
+    "Also return 'highlights': 2 or 3 stretches of the story that work as stand-alone TikTok clips of 25 to 55 seconds (about 8 to 18 beats each). Good picks: the opening with its rule or question, the biggest moment, and the ending with the twist.",
+    "Each highlight: 'start' and 'end' are beat numbers counted from 1, both included. 'hook' is a NEW opening line of 6 to 14 words, in the same narrator's voice, that makes the clip make sense to someone who never saw the rest. Highlights may overlap. The last one should include the final beat.",
+  ];
+}
 
 function folkLine(name: string, i: number, color?: string): string {
   const f = townFolk(name);
@@ -100,6 +149,12 @@ export function pitchesPrompt(opts: {
           WHATIF_INTRO,
           "Pick questions where a single number can climb the whole time (meters dug, kilometers climbed, days without X, speed, size, how many) and where the real facts get more surprising at each step. Mix science, space, the human body, animals, history and everyday life; don't pitch the same kind of question twice.",
         ].join("\n")
+      : opts.style === "pov"
+      ? [
+          "Style POV STORY: first-person story-time mysteries about the real reason behind a strange town rule.",
+          POV_INTRO,
+          "Pitch rules that feel oddly specific and believable, where the real reason is a genuine surprise. Vary them: some funny, some sweet, some spooky-but-safe.",
+        ].join("\n")
       : opts.style === "hook"
       ? "Style HOOK: first-person underdog stories. A world with one clear rule (everyone gets a power, mark, rank or creature at a certain age). The overlooked hero turns out to be far beyond everyone else, ending on a cliffhanger."
       : "Style COZY: gentle, funny, warm little tales with an emotional payoff and no moral lecture.";
@@ -120,10 +175,12 @@ export function pitchesPrompt(opts: {
       ? `Pitch ${opts.count} episodes, in the order above. Each pitch: title (3 to 7 words, catchy), logline (one sentence), genre (one or two words), twist (the ending in one sentence), era (the flow's id: ${(opts.plans ?? []).map((p) => p.shape.id).join(", ")}, in order) and skeptic (the neighbors' names, comma separated, exactly as given).`
       : opts.style === "whatif"
       ? `Pitch ${opts.count} different What If videos. Each pitch: title (starts with "What If You", 4 to 8 words, title case), logline (one sentence), genre (one or two words, like science or space), twist (the final, most extreme step and its funny line), mechanism (the real facts the steps are built on, in two or three plain sentences, with real numbers) and era (the counter as "LABEL | unit", for example "DEPTH | m", "DAYS AWAKE | days" or "SPEED | km/h").`
+      : opts.style === "pov"
+      ? `Pitch ${opts.count} different POV stories. Each pitch: title ("The Real Reason" plus the rule, 5 to 10 words, title case), logline (the rule and why it matters to Pip, one sentence), genre (one or two words, like mystery or comedy), twist (the real reason, in one sentence) and skeptic (the scary theory everyone believes, in one sentence).`
       : opts.style === "twist"
       ? `Pitch ${opts.count} different original stories. Each pitch: title (4 to 8 words, title case, framed as a mystery like "Why ...", "How ... Worked" or "The ... That ...", no emoji or hashtags), logline (one sentence), genre (one or two words), twist (the payoff in one sentence), mechanism (the real trick or fact, explained correctly in one or two plain sentences), era (when and where it is set) and skeptic (who mocks the hero).`
       : `Pitch ${opts.count} different original stories. Each pitch: title (max 6 words), logline (one sentence), genre (one or two words) and twist (the surprise in one sentence).`,
-    opts.style === "twist" || opts.style === "gossip" || opts.style === "whatif"
+    opts.style === "twist" || opts.style === "gossip" || opts.style === "whatif" || opts.style === "pov"
       ? 'Answer as JSON: {"pitches":[{"title":"...","logline":"...","genre":"...","twist":"...","mechanism":"...","era":"...","skeptic":"..."}]}'
       : 'Answer as JSON: {"pitches":[{"title":"...","logline":"...","genre":"...","twist":"..."}]}',
   ]
@@ -137,7 +194,7 @@ function vocab(style?: StoryStyle): string {
     `Allowed times: ${TIMES.join(", ")}.`,
     `Character colors: ${COLORS.join(", ")}. Accessories: ${ACCESSORIES.join(", ")}.`,
     `Moods: ${EXPRESSIONS.join(", ")}. Actions: ${ACTIONS.join(", ")}.`,
-    style === "gossip" || style === "whatif"
+    style && isPaper(style)
       ? "Characters are paper-cutout puppets. In each beat, 'cast' lists who is on screen by their index in 'characters' (0 to 4), with a mood and action. Use at most 3 on screen."
       : "Characters are simple round cartoon blobs, so describe them only by name, color and accessory.",
     style === "gossip" ? "" : "In each beat, 'cast' lists who is on screen by their index in 'characters' (0, 1 or 2), with a mood and action. Use at most 3 on screen.",
@@ -214,7 +271,7 @@ function whatifRules(pitch: Pitch): string[] {
   ];
 }
 
-export function storyPrompt(pitch: Pitch, style: StoryStyle): string {
+export function storyPrompt(pitch: Pitch, style: StoryStyle, length: VideoLength = "short", cast: Character[] = []): string {
   const r = STYLE_RULES[style];
   const styleRules =
     style === "twist"
@@ -237,6 +294,11 @@ export function storyPrompt(pitch: Pitch, style: StoryStyle): string {
       ? gossipRules(pitch)
       : style === "whatif"
       ? whatifRules(pitch)
+      : style === "pov"
+      ? [
+          ...povRules(length),
+          `'characters' JSON (Pip is "I"; the neighbors may change color but keep their names): ${JSON.stringify(cast.length ? cast : episodeCast([]))}`,
+        ]
       : style === "hook"
       ? [
           `STYLE HOOK. ${r.minBeats} to ${r.maxBeats} beats, ${r.seconds} seconds total.`,
@@ -261,17 +323,21 @@ export function storyPrompt(pitch: Pitch, style: StoryStyle): string {
     `Twist: ${pitch.twist}`,
     pitch.mechanism ? `Real mechanism: ${pitch.mechanism}` : "",
     pitch.era ? `Era and place: ${pitch.era}` : "",
-    pitch.skeptic ? `Who mocks the hero: ${pitch.skeptic}` : "",
+    pitch.skeptic ? (style === "pov" ? `The scary theory everyone believes: ${pitch.skeptic}` : `Who mocks the hero: ${pitch.skeptic}`) : "",
     "",
     ...styleRules,
-    style === "gossip" ? "Use the characters exactly as listed above, in that order. Character 0 (Pip) is the hero." : style === "whatif" ? "Character 0 (Pip) is 'you'." : "Use 1 to 3 characters. Character 0 is the hero.",
+    ...(length === "long" ? longRules(style) : []),
+    style === "gossip" ? "Use the characters exactly as listed above, in that order. Character 0 (Pip) is the hero." : style === "whatif" ? "Character 0 (Pip) is 'you'." : style === "pov" ? "Use the characters exactly as listed above. Character 0 (Pip) is 'I'." : "Use 1 to 3 characters. Character 0 is the hero.",
     vocab(style),
     "",
-        style === "whatif"
+    withHighlights(
+      style === "whatif"
       ? 'Answer as JSON: {"title":"...","logline":"...","mechanism":"...","counter":{"label":"...","unit":"..."},"characters":[{"name":"...","color":"...","accessory":"..."}],"beats":[{"setting":"...","time":"...","narration":"...","cast":[{"who":0,"mood":"...","action":"..."}],"speaker":null,"line":null,"prop":null,"sfx":null,"card":null,"value":null}],"caption":"...","hashtags":["..."]}'
       : style === "gossip"
       ? 'Answer as JSON: {"title":"...","logline":"...","mechanism":null,"characters":[{"name":"...","color":"...","accessory":"..."}],"beats":[{"setting":"...","time":"...","narration":"...","cast":[{"who":0,"mood":"...","action":"..."}],"speaker":null,"line":null,"prop":null,"sfx":null,"card":null}],"caption":"...","hashtags":["..."]}'
       : 'Answer as JSON: {"title":"...","logline":"...","mechanism":null,"characters":[{"name":"...","color":"...","accessory":"..."}],"beats":[{"setting":"...","time":"...","narration":"...","cast":[{"who":0,"mood":"...","action":"..."}],"speaker":null,"line":null,"prop":null,"sfx":null}],"caption":"...","hashtags":["..."]}',
+      length,
+    ),
   ]
     .filter((l) => l !== "")
     .join("\n");
@@ -289,6 +355,8 @@ export function editPrompt(story: Story, style: StoryStyle, issues: string[]): s
       ? "Check: Pip is character 0; beat 1 is a 'headline' card with a punchy headline; Mabel the pigeon narrates in first person, gossipy and short; the middle follows one clear story flow (a what if, a whodunit, a rewind, plan vs. reality, two sides, a documentary, a heist, a week of days, a top five, a training montage, theories, or a new neighbor); it does NOT use the 'something spreads and everyone copies it one by one' pattern (if it does, rewrite it, verdict 'fixed'); each neighbor does something only they would do; the last beat is a 'correction' card starting with 'Correction:' that lands the twist; no 'part 2' or 'follow'; it is actually funny; no catchphrase repeated over and over; it's about town life, not the internet; no real app, brand or person is named."
       : style === "whatif"
       ? "Check: beat 1 is a 'question' card starting with 'What if you'; narration is second person ('you'), present tense, short; 'counter' is set and every step has a 'value' that only goes up, in big jumps; each step is more extreme than the last; it ends on the most extreme step with a funny line and no 'part 2'. FACT CHECK every number and claim: depths, heights, temperatures, records, body effects. Fix anything wrong with small edits (verdict 'fixed'); if the core idea is false or you are not sure the facts are true, the verdict is 'rejected'."
+      : style === "pov"
+      ? "Check: Pip is character 0 and narrates in first person ('I'); beat 1 states one strange town rule as a plain fact; the story follows the flow: how the town lives with it, why it matters to me, the day it happens, three clues, the scary theory, then 'The real reason?' reveal that explains every clue, and a small joke callback to end; sentences are short; no chosen ones, deadly trials, paradise, color rules, villains taking over or little sister; no 'part 2'. If 'highlights' are present, keep them and keep their beat numbers right after any edit."
       : style === "hook"
       ? "Check: first line states the world's rule; first person; underdog; clear reveal far beyond everyone; shocked reactions; ends on a cliffhanger; every narration line is short and punchy."
       : "Check: clear setup, problem, turn and payoff; gentle and funny; no moral lecture.",

@@ -1,4 +1,5 @@
-// npm run render:sample [twist|hook|cozy|gossip|whatif] [2.5d|flat]
+// npm run render:sample [twist|hook|cozy|gossip|whatif|pov] [2.5d|flat] [long]
+// "long" also cuts the TikTok clips into the clips folder.
 // Renders a demo story end to end without the web app, to prove the video pipeline works.
 import fs from "node:fs";
 import path from "node:path";
@@ -18,13 +19,15 @@ async function main() {
   const { shipStory, outputFolder } = await import("../src/lib/agents/ship");
   const { config } = await import("../src/lib/config");
   const { FPS } = await import("../src/lib/story");
+  const { renderClips } = await import("../src/lib/agents/clips");
 
   const arg = process.argv[2];
-  const style = arg === "cozy" || arg === "hook" || arg === "gossip" || arg === "whatif" ? arg : "twist";
+  const style = arg === "cozy" || arg === "hook" || arg === "gossip" || arg === "whatif" || arg === "pov" ? arg : "twist";
+  const length = process.argv.includes("long") ? "long" : "short";
   const look = process.argv[3] === "flat" ? "flat" : "2.5d";
   const pitch = demoPitches(style, [])[0];
   console.log(`Script Room: writing "${pitch.title}" (${style}, ${look})`);
-  const checked = ruleCheck(demoStory(pitch, style), style);
+  const checked = ruleCheck(demoStory(pitch, style, length), style, length);
   if (checked.fatal.length) throw new Error(`QA rejected the demo story: ${checked.fatal.join("; ")}`);
   console.log(`QA Lab: ${checked.issues.length ? checked.issues.join("; ") : "approved"}`);
 
@@ -61,6 +64,19 @@ async function main() {
   console.log(`\nEdit Bay: rendered in ${Math.round((Date.now() - started) / 1000)}s`);
   const folder = shipStory({ renderedFile: rendered, story: checked.story, folder: outputFolder("sample", `${checked.story.title}-${style}-${look}`), extra: { style, look, mood } });
   console.log(`Shipping Dock: saved to ${folder}`);
+  if (length === "long") {
+    const clips = await renderClips({
+      story: checked.story,
+      style,
+      look,
+      jobDir,
+      folder,
+      audio: voices.audio,
+      onProgress: (p) => process.stdout.write(`\rClip Room: ${Math.round(p * 100)}%   `),
+      log: (m) => console.log(`\nClip Room: ${m}`),
+    });
+    console.log(`\nClip Room: ${clips.length} TikTok clips in ${path.join(folder, "clips")}`);
+  }
 }
 
 main().catch((e) => {
