@@ -27,6 +27,13 @@ A story moves through the building in this order.
 
 Stories go through one at a time: script, QA, voice, art, edit, ship. A failed story is retried once, then marked **Skipped**.
 
+## Posting schedule
+
+In the Shipping Dock, set **When a video is finished** to **Wait for my posting times** and pick daily times (Philippines time). Finished videos wait in the **Posting queue** and go out one per time, oldest first. Each one has **Post now** and **Don't post** buttons.
+
+- **TikTok** has no way for apps to book a time, so Reelhouse sends each video itself. Your computer must be on with Reelhouse running at those times. If it was off, the missed video goes out when Reelhouse starts again and the rest move to the next times.
+- **YouTube** (public uploads only): Hatch uploads right away and YouTube publishes the video at its time, even if your computer is off. Until Google verifies your project, uploads stay private anyway.
+
 ## Story styles
 
 - **Twist Tale** (default): about 60 seconds, 18 to 24 fast beats. A hero does something that looks foolish, everyone laughs, the sensible choice fails, and a real, checkable trick or fact explains why the hero was right. One-word captions, close-ups of gears, levers and jars when explaining, sound effects on the payoff, and no outro so it loops. Ideas come from Wikipedia's "Did you know", r/todayilearned, r/explainlikeimfive and r/AskHistorians. The story is original; only the trick is real, and Vera rejects any story whose fact she isn't sure of.

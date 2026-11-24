@@ -20,6 +20,8 @@ function describe(url: string, method: string): string {
   if (url.startsWith("/api/ideas")) return method === "DELETE" ? "remove that pitch" : "pitch ideas";
   if (url.startsWith("/api/scout")) return "update the niche scout";
   if (url.startsWith("/api/jobs")) return "retry that story";
+  if (url.startsWith("/api/posting/")) return "change that post";
+  if (url.startsWith("/api/posting")) return "save the posting schedule";
   if (url.startsWith("/api/tiktok")) return "reach TikTok";
   if (url.startsWith("/api/youtube")) return "reach YouTube";
   return "do that";

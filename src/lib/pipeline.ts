@@ -9,8 +9,7 @@ import { shipStory, outputFolder } from "./agents/ship";
 import { makeMusic, makeSfx, pickMood, recordVoices } from "./agents/sound";
 import { latestReport, scoutTrends } from "./agents/trends";
 import { latestScout, runScout } from "./agents/scout";
-import { postToTikTok, tiktokAutoPost } from "./tiktok";
-import { postToYouTube, youtubeAutoPost } from "./youtube";
+import { queueFinishedVideo } from "./posting";
 import { config } from "./config";
 import { getDb, log } from "./db";
 import { getSettings } from "./settings";
@@ -260,25 +259,16 @@ async function runJob(job: JobRow): Promise<void> {
     }
   }
 
-  if (tiktokAutoPost()) {
-    // Long videos send their clips to TikTok; short ones go up whole.
-    const posts = long && clips.length ? clips : [{ file: path.join(folder, "video.mp4"), story }];
-    for (const [i, post] of posts.entries()) {
-      try {
-        const r = await postToTikTok({ videoFile: post.file, story: post.story });
-        log("ship", posts.length > 1 ? `Hatch sent clip ${i + 1} to TikTok (${r}).` : `Hatch sent it to TikTok (${r}).`, "info", job.id);
-      } catch (e) {
-        log("ship", `TikTok posting failed: ${(e as Error).message}`, "warn", job.id);
-      }
-    }
-  }
-  if (youtubeAutoPost()) {
-    try {
-      const link = await postToYouTube({ videoFile: path.join(folder, "video.mp4"), story });
-      log("ship", `Hatch uploaded it to YouTube: ${link}`, "info", job.id);
-    } catch (e) {
-      log("ship", `YouTube upload failed: ${(e as Error).message}`, "warn", job.id);
-    }
+  // Posting: TikTok and YouTube get it now, or at the next posting time (see src/lib/posting.ts).
+  try {
+    queueFinishedVideo({
+      jobId: job.id,
+      title: story.title,
+      video: { file: path.join(folder, "video.mp4"), story },
+      tiktokClips: long ? clips : [],
+    });
+  } catch (e) {
+    log("ship", `Couldn't queue it for posting: ${(e as Error).message}`, "warn", job.id);
   }
 }
 
