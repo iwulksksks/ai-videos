@@ -387,6 +387,133 @@ function JobLine({ job, act }: { job: Job; act: Act }) {
   );
 }
 
+type Posting = StudioState["posting"];
+type PostPlatform = "tiktok" | "youtube";
+
+const POST_STATUS: Record<string, string> = {
+  waiting: "waiting",
+  posting: "posting now",
+  scheduled: "on YouTube, goes public later",
+  posted: "posted",
+  failed: "failed",
+};
+
+/** One platform's daily posting times. Edits stay local until you leave the box, so typing doesn't jump. */
+function TimeList({ platform, times, act }: { platform: PostPlatform; times: string[]; act: Act }) {
+  const [draft, setDraft] = useState(times);
+  const key = times.join(",");
+  useEffect(() => setDraft(key ? key.split(",") : []), [key]);
+  const save = (next: string[]) => void act("ship", "/api/posting", { [platform]: next.filter(Boolean) });
+  return (
+    <div className="times">
+      {draft.map((t, i) => (
+        <span key={i} className="time">
+          <input
+            type="time"
+            value={t}
+            onChange={(e) => setDraft(draft.map((v, n) => (n === i ? e.target.value : v)))}
+            onBlur={() => save(draft)}
+          />
+          <button className="small secondary" title="Remove this time" onClick={() => save(draft.filter((_, n) => n !== i))}>
+            ✕
+          </button>
+        </span>
+      ))}
+      {draft.length < 8 && (
+        <button className="small secondary" onClick={() => save([...draft, draft.length ? nextHour(draft[draft.length - 1]) : "19:00"])}>
+          + Add a time
+        </button>
+      )}
+    </div>
+  );
+}
+
+function nextHour(t: string): string {
+  const h = (Number(t.split(":")[0]) + 2) % 24;
+  return `${String(h).padStart(2, "0")}:${t.split(":")[1] ?? "00"}`;
+}
+
+function zoneName(z: string): string {
+  return z === "Asia/Manila" ? "Philippines time" : z.replace(/_/g, " ");
+}
+
+function PostingSchedule({ posting, act, tkOn, ytOn, ytMode }: { posting: Posting; act: Act; tkOn: boolean; ytOn: boolean; ytMode: string }) {
+  const s = posting.schedule;
+  const fmt = (t: number | null) =>
+    t ? new Date(t).toLocaleString("en-US", { timeZone: s.timeZone, weekday: "short", hour: "numeric", minute: "2-digit" }) : null;
+  return (
+    <div className="card">
+      <h3>Posting schedule</h3>
+      <label>
+        When a video is finished
+        <select value={s.on ? "on" : "off"} onChange={(e) => void act("ship", "/api/posting", { on: e.target.value === "on" })}>
+          <option value="off">Post it right away</option>
+          <option value="on">Wait for my posting times</option>
+        </select>
+      </label>
+      {s.on && (
+        <>
+          <p className="muted">Times are {zoneName(s.timeZone)}, every day. Each time sends one video. If more videos are waiting, they take the next times in order.</p>
+          <div>
+            <b>TikTok</b>
+            <TimeList platform="tiktok" times={s.tiktok} act={act} />
+            <p className="muted">
+              {!tkOn
+                ? "TikTok posting is off below, so nothing is queued for TikTok."
+                : "TikTok doesn't let apps book a time, so your computer must be on with Reelhouse running at these times. If it was off, the missed video goes out when Reelhouse starts again."}
+              {tkOn && fmt(posting.nextSlot.tiktok) ? ` Next time: ${fmt(posting.nextSlot.tiktok)}.` : ""}
+            </p>
+          </div>
+          <div>
+            <b>YouTube</b>
+            <TimeList platform="youtube" times={s.youtube} act={act} />
+            <p className="muted">
+              {!ytOn
+                ? "YouTube uploads are off below, so nothing is queued for YouTube."
+                : ytMode === "public"
+                  ? "Hatch uploads each video straight away and YouTube makes it public at its time, even if your computer is off by then."
+                  : "These times only apply to public uploads. Private and unlisted ones upload straight away."}
+              {ytOn && ytMode === "public" && fmt(posting.nextSlot.youtube) ? ` Next time: ${fmt(posting.nextSlot.youtube)}.` : ""}
+            </p>
+          </div>
+        </>
+      )}
+      <h3>Posting queue</h3>
+      {!posting.posts.length ? (
+        <p className="muted">Nothing waiting. Finished videos show up here with their posting time.</p>
+      ) : (
+        <ul className="list">
+          {posting.posts.map((p) => (
+            <li key={p.id}>
+              <b>{p.platform === "tiktok" ? "TikTok" : "YouTube"}:</b> {p.label} <span className={`pill post-${p.status}`}>{POST_STATUS[p.status] ?? p.status}</span>
+              <p className="muted">
+                {p.status === "waiting" ? `Goes out ${p.when}` : p.status === "scheduled" ? `Goes public ${p.when}` : null}
+                {p.result && p.status !== "waiting" ? ` ${p.result}` : null}
+              </p>
+              {p.error && <p className="muted">{p.error}</p>}
+              {(p.status === "waiting" || p.status === "failed") && (
+                <div className="buttons">
+                  {p.status === "failed" && (
+                    <button className="small secondary" onClick={() => void act("ship", `/api/posting/${p.id}`, { action: "retry" })}>
+                      Try again at the next time
+                    </button>
+                  )}
+                  <button className="small secondary" onClick={() => void act("ship", `/api/posting/${p.id}`, { action: "now" })}>
+                    Post now
+                  </button>
+                  <button className="small secondary" onClick={() => void act("ship", `/api/posting/${p.id}`, { action: "cancel" })}>
+                    Don&apos;t post
+                  </button>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function Ship({ state, act }: { state: StudioState; act: Act }) {
   const done = state.jobs.filter((j) => j.hasVideo);
   const tk = state.tiktok;
@@ -424,6 +551,13 @@ function Ship({ state, act }: { state: StudioState; act: Act }) {
           ))}
         </div>
       </div>
+      <PostingSchedule
+        posting={state.posting}
+        act={act}
+        tkOn={tk.connected && tk.mode !== "off"}
+        ytOn={yt.connected && yt.mode !== "off"}
+        ytMode={yt.mode}
+      />
       <div className="card">
         <h3>TikTok</h3>
         {!tk.configured ? (

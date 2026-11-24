@@ -86,3 +86,10 @@ button.small, .button.small { padding: 6px 12px; font-size: 13px; }
 .video small { word-break: break-all; font-size: 11px; }
 .error { background: #ffe0e0; border: 2px solid #f3a5a5; border-radius: 12px; padding: 10px 14px; cursor: pointer; }
 details summary { cursor: pointer; font-weight: 700; }
+
+/* Posting schedule */
+.times { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0; }
+.times .time { display: inline-flex; gap: 4px; align-items: center; }
+.times input[type="time"] { width: auto; }
+.pill.post-failed { border-color: #c0392b; color: #c0392b; }
+.pill.post-posted { border-color: #2e8b57; color: #2e8b57; }

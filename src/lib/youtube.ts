@@ -155,8 +155,14 @@ function googleError(status: number, text: string): Error {
 }
 
 /** Upload one finished video as a Short. Returns the video link. */
-export async function postToYouTube(opts: { videoFile: string; story: Story; privacy?: Exclude<YouTubeMode, "off"> }): Promise<string> {
-  const privacy = opts.privacy ?? youtubeMode();
+/** With publishAt (ms), the video is uploaded private and YouTube makes it public at that time. */
+export async function postToYouTube(opts: {
+  videoFile: string;
+  story: Story;
+  privacy?: Exclude<YouTubeMode, "off">;
+  publishAt?: number;
+}): Promise<string> {
+  const privacy = opts.publishAt ? "private" : (opts.privacy ?? youtubeMode());
   if (privacy === "off") throw new Error("YouTube posting is off");
   const token = await accessToken();
   const size = fs.statSync(opts.videoFile).size;
@@ -173,6 +179,7 @@ export async function postToYouTube(opts: { videoFile: string; story: Story; pri
     },
     status: {
       privacyStatus: privacy,
+      ...(opts.publishAt ? { publishAt: new Date(opts.publishAt).toISOString() } : {}),
       selfDeclaredMadeForKids: false,
       containsSyntheticMedia: true, // honest label: the story and voices are AI-made
     },

@@ -2,6 +2,7 @@
 import { log } from "./db";
 import { autopilotRun, isBusy, recoverJobs } from "./pipeline";
 import { getMeta, getSettings, setMeta } from "./settings";
+import { recoverPosts, tickPosting } from "./posting";
 
 const g = globalThis as unknown as { __reelhouseScheduler?: NodeJS.Timeout };
 
@@ -14,6 +15,7 @@ export function nextRunAt(): number | null {
 }
 
 async function tick() {
+  void tickPosting(); // finished videos waiting for their posting time
   try {
     const s = getSettings();
     if (!s.autopilot) return;
@@ -30,6 +32,11 @@ async function tick() {
 export function startScheduler() {
   if (g.__reelhouseScheduler) return;
   recoverJobs();
+  try {
+    recoverPosts();
+  } catch (e) {
+    log("ship", `Couldn't load the posting queue: ${(e as Error).message}`, "error");
+  }
   // If autopilot was just switched on and never ran, the first run happens within a minute.
   g.__reelhouseScheduler = setInterval(() => void tick(), 60 * 1000);
   setTimeout(() => void tick(), 5000);

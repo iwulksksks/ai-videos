@@ -7,6 +7,7 @@ import { config } from "./config";
 import { getDb, recentActivity } from "./db";
 import { isBusy, waitingIdeas, type JobRow } from "./pipeline";
 import { nextRunAt } from "./scheduler";
+import { postingState } from "./posting";
 import { getSettings } from "./settings";
 import { tiktokStatus } from "./tiktok";
 import { youtubeStatus } from "./youtube";
@@ -53,6 +54,7 @@ export async function studioState() {
     trends: trends ? { ...trends.report, created_at: trends.created_at } : null,
     tiktok: tiktokStatus(),
     youtube: youtubeStatus(),
+    posting: postingState(),
     scout: scoutStatus(),
   };
 }
