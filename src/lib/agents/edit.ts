@@ -42,17 +42,26 @@ function serveFolder(dir: string): Promise<{ url: string; close: () => void }> {
       const type = MIME[path.extname(file).toLowerCase()] ?? "application/octet-stream";
       const range = req.headers.range;
       const cors = { "Access-Control-Allow-Origin": "*", "Accept-Ranges": "bytes" };
-      if (range) {
+      const send = (opts?: { start: number; end: number }) => {
+        const stream = fs.createReadStream(file, opts);
+        // A renderer that hangs up early must not take the whole studio down with it.
+        stream.on("error", () => res.destroy());
+        res.on("close", () => stream.destroy());
+        stream.pipe(res);
+      };
+      if (range && stat.size > 0) {
         const m = /bytes=(\d*)-(\d*)/.exec(range);
-        const start = m && m[1] ? parseInt(m[1], 10) : 0;
-        const end = m && m[2] ? parseInt(m[2], 10) : stat.size - 1;
+        const last = stat.size - 1;
+        const start = Math.min(m && m[1] ? parseInt(m[1], 10) : 0, last);
+        const end = Math.min(Math.max(m && m[2] ? parseInt(m[2], 10) : last, start), last);
         res.writeHead(206, { ...cors, "Content-Type": type, "Content-Range": `bytes ${start}-${end}/${stat.size}`, "Content-Length": end - start + 1 });
-        fs.createReadStream(file, { start, end }).pipe(res);
+        send({ start, end });
       } else {
         res.writeHead(200, { ...cors, "Content-Type": type, "Content-Length": stat.size });
-        fs.createReadStream(file).pipe(res);
+        send();
       }
     });
+    server.on("clientError", (_err, socket) => socket.destroy());
     server.listen(0, "127.0.0.1", () => {
       const port = (server.address() as AddressInfo).port;
       resolve({ url: `http://127.0.0.1:${port}`, close: () => server.close() });
@@ -122,7 +131,8 @@ export async function renderVideo(opts: {
       inputProps,
       browserExecutable,
       crf: 22,
-      concurrency: Math.max(1, os.cpus().length),
+      // Leave half the computer free so the studio page (and everything else) stays responsive.
+      concurrency: Math.max(1, Math.floor(os.cpus().length / 2)),
       imageFormat: "jpeg",
       jpegQuality: 88,
       onProgress: ({ progress }) => {

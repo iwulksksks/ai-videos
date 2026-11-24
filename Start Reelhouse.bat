@@ -78,6 +78,14 @@ if not defined NO_OLLAMA (
   )
 )
 
+netstat -ano | findstr /r /c:":3000 .*LISTENING" >nul
+if not errorlevel 1 (
+  echo Reelhouse is already running in another window. Opening the page...
+  start "" http://localhost:3000
+  timeout /t 5 >nul
+  exit /b 0
+)
+
 echo Getting the studio ready...
 call npm run build
 if errorlevel 1 ( echo !! The build failed. Scroll up to see why. & pause & exit /b 1 )
@@ -87,9 +95,20 @@ echo  The studio is open at http://localhost:3000
 echo  Keep this window open while autopilot is on. Close it to stop Reelhouse.
 echo.
 start "" http://localhost:3000
+set RESTARTS=0
+:serve
 call npm run start
-pause
-exit /b 0
+set /a RESTARTS+=1
+if %RESTARTS% GEQ 5 (
+  echo !! The studio stopped 5 times in a row. Take a screenshot of the lines above and send it over.
+  pause
+  exit /b 1
+)
+echo.
+echo !! The studio stopped unexpectedly. Starting it again in 5 seconds...
+echo !! (Close this window if you want Reelhouse to stop.)
+timeout /t 5 >nul
+goto serve
 
 :installfailed
 echo.
