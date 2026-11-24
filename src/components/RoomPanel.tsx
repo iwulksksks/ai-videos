@@ -428,7 +428,7 @@ function Ship({ state, act }: { state: StudioState; act: Act }) {
         <h3>TikTok</h3>
         {!tk.configured ? (
           <p className="muted">
-            Not set up. To let Hatch post for you, follow the steps in TIKTOK.md, then add TIKTOK_CLIENT_KEY and TIKTOK_CLIENT_SECRET to .env.local and restart.
+            Not set up yet. To let Hatch send videos to TikTok for you, open TIKTOK.md in your Reelhouse folder and follow Parts A to C. It takes about 30 minutes, once.
           </p>
         ) : !tk.connected ? (
           <a className="button" href="/api/tiktok/connect">
