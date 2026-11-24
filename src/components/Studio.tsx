@@ -1,25 +1,54 @@
 "use client";
 // The whole app screen: the building on the left, the selected room's panel on the right.
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { StudioState } from "@/lib/state";
 import { Building } from "./Building";
 import { RoomPanel } from "./RoomPanel";
 import { ROOMS, STAGE_LABEL, type RoomId } from "./rooms";
+
+const HOW_TO_FIX =
+  "Check that the black Reelhouse window is still open. If it closed, double-click Start Reelhouse again.";
+const OFFLINE = `The studio isn't answering, so this page can't update. ${HOW_TO_FIX} This message goes away by itself once the studio is back.`;
+
+/** What each button's request is for, in plain words, for error messages. */
+function describe(url: string, method: string): string {
+  if (url.startsWith("/api/settings")) return "save your settings";
+  if (url.startsWith("/api/produce")) return "start a story";
+  if (url.startsWith("/api/trends")) return "check trends";
+  if (url.startsWith("/api/ideas")) return method === "DELETE" ? "remove that pitch" : "pitch ideas";
+  if (url.startsWith("/api/scout")) return "update the niche scout";
+  if (url.startsWith("/api/jobs")) return "retry that story";
+  if (url.startsWith("/api/tiktok")) return "reach TikTok";
+  if (url.startsWith("/api/youtube")) return "reach YouTube";
+  return "do that";
+}
+
+/** A browser "Failed to fetch" means the request never got an answer at all. */
+function isNetworkError(e: unknown): boolean {
+  return e instanceof TypeError || (e as Error)?.name === "AbortError" || (e as Error)?.name === "TimeoutError";
+}
 
 export function Studio() {
   const [state, setState] = useState<StudioState | null>(null);
   const [selected, setSelected] = useState<RoomId | null>("producer");
   const [pending, setPending] = useState<Partial<Record<RoomId, boolean>>>({});
   const [error, setError] = useState<string | null>(null);
+  const [offline, setOffline] = useState(false);
+  const misses = useRef(0);
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch("/api/state", { cache: "no-store" });
-      if (!res.ok) throw new Error(`The studio answered ${res.status}`);
+      const res = await fetch("/api/state", { cache: "no-store", signal: AbortSignal.timeout(15000) });
+      if (!res.ok) throw new Error(`The studio couldn't load its status (error ${res.status}). The black Reelhouse window shows why.`);
       setState(await res.json());
-      setError(null);
+      misses.current = 0;
+      setOffline(false);
     } catch (e) {
-      setError((e as Error).message);
+      misses.current += 1;
+      // One missed check is normal while the computer is busy rendering; only speak up when it keeps happening.
+      if (misses.current < 3) return;
+      if (isNetworkError(e)) setOffline(true);
+      else setError((e as Error).message);
     }
   }, []);
 
@@ -42,11 +71,15 @@ export function Studio() {
           body: body === undefined ? undefined : JSON.stringify(body),
         });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error((data as { error?: string }).error ?? `Error ${res.status}`);
+        if (!res.ok) {
+          const why = (data as { error?: string }).error ?? `error ${res.status}`;
+          throw new Error(`Couldn't ${describe(url, method)}: ${why}`);
+        }
+        setError(null);
         await refresh();
         return data;
       } catch (e) {
-        setError((e as Error).message);
+        setError(isNetworkError(e) ? `Couldn't ${describe(url, method)} because the studio isn't answering. ${HOW_TO_FIX}` : (e as Error).message);
         return null;
       } finally {
         setPending((p) => ({ ...p, [room]: false }));
@@ -84,6 +117,7 @@ export function Studio() {
         <p className="hint">Click any room to see what its worker is doing.</p>
       </section>
       <section className="right">
+        {offline && <div className="error">{OFFLINE}</div>}
         {error && (
           <div className="error" onClick={() => setError(null)}>
             {error} <small>(click to hide)</small>

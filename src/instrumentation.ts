@@ -1,6 +1,8 @@
 // Runs once when the Next.js server starts: opens the studio and starts the autopilot clock.
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
+    const { keepServerAlive } = await import("./lib/crash-guard");
+    keepServerAlive();
     const { startScheduler } = await import("./lib/scheduler");
     startScheduler();
   }

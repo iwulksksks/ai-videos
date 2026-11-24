@@ -48,8 +48,10 @@ function Producer({ state, act, pending }: { state: StudioState; act: Act; pendi
     setDirty(true);
   };
   const save = async (patch?: Partial<typeof form>) => {
-    await act("producer", "/api/settings", patch ?? form);
-    setDirty(false);
+    // Only forget the typed-in changes once the studio has really saved them.
+    // If saving fails, the form keeps what was typed so nothing jumps back.
+    const saved = await act("producer", "/api/settings", patch ?? form);
+    if (saved) setDirty(false);
   };
   const s = state.setup;
   return (
