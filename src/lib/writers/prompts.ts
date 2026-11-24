@@ -68,7 +68,7 @@ function countryRules(pitch: Pitch, length: VideoLength): string[] {
     "Every fact must be TRUE and checkable. When you are not sure of a fact, use a different one. Put the real fact and the bonus fact in 'mechanism', in two plain sentences with the numbers.",
     "On beats where the story moves somewhere new, set 'place' to the real town, city or spot in that country (like 'Reykjavik' or 'Lake Myvatn'), 1 to 3 words; null keeps the last place.",
     `The local may say short lines (under ${r.maxLineWords} words), at most 5 in the story. Give the local a real, common first name from that country and a fitting color.`,
-    "Use settings that fit each step and change them as you go (city, harbor, market, cafe, forest, beach, canyon, mine, palace, castle, bedroom...). Use 'time' to match the story.",
+    "Use settings that fit each step and the country's climate, and change them as you go (city, harbor, market, cafe, forest, beach, canyon, mine, palace, castle, bedroom...). The 'beach' set has palm trees, so only use it for warm countries. Use 'time' to match the story.",
     "Title: 5 to 10 words, title case, a mystery about the country (like 'Why the Sun Never Set in Iceland'). caption: one short line. hashtags: 4 to 6, including the country.",
   ];
 }

@@ -695,7 +695,8 @@ const COUNTRY_EPISODES: CountryEpisode[] = [
       skeptic: "Sigga, a tour bus driver",
     },
     build: () => {
-      const C = "city", H = "harbor", BR = "bedroom", CA = "cafe", K = "canyon", BE = "beach";
+      // The "beach" set has palm trees, so the black sand beach uses the harbor shore instead.
+      const C = "city", H = "harbor", BR = "bedroom", CA = "cafe", K = "canyon", BE = "harbor";
       const pip = episodeCast([])[0];
       return {
         title: "Why the Sun Wouldn't Set in Iceland",
