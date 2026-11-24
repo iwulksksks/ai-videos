@@ -12,7 +12,8 @@ TikTok only lets "apps" post videos. So you make a free app for yourself on TikT
 
 ## Part A: Make your TikTok app and get your two codes
 
-1. Go to <https://developers.tiktok.com> and click **Log in**. Log in with your channel's TikTok account.
+1. Go to <https://developers.tiktok.com> and click **Log in**, then **Sign up**. The developer website has its **own account**, separate from your TikTok login: use your email address and make up a password. TikTok emails you a code to paste in.
+   - Your TikTok account can use Google, Apple or anything else to sign in. That doesn't matter here. You'll use your normal TikTok sign-in later, in Part C.
 2. Click your profile picture in the top right, then **Manage apps**.
 3. Click **Connect an app**. If it asks who owns the app, choose **Individual** (or make a new one with your own name).
 4. Fill in the basics:
