@@ -113,7 +113,7 @@ See [YOUTUBE.md](YOUTUBE.md). It works from this computer without a tunnel, uplo
 | Files keep "syncing" or say "in use" | The folder is in OneDrive. Move it to `C:\Reelhouse` (step 2). |
 | Studio setup says Ollama is not running | Open the Ollama app. On Windows, look for the llama near the clock. |
 | Studio setup says the story model is missing | Open a terminal in the Reelhouse folder and run `npm run setup:ollama`, or just restart the launcher. |
-| Videos have no voices | Install Python with "Add to PATH" ticked, then run `npm run setup:voice` in the Reelhouse folder. |
+| Videos have no voices | Install Python with "Add to PATH" ticked, then run `npm run setup:voice` in the Reelhouse folder. Any Python version is fine: if yours is too new for the voice engine, Reelhouse fetches its own Python 3.12 into the `.tools` folder. |
 | The page says "This site can't be reached" | The black window was closed. Start Reelhouse again. |
 | A story shows **Skipped** | It failed twice. Open the Edit Bay and click **Try again**, or check the Producer's activity log for the reason. |
 | Rendering is very slow | Normal on older computers. Choose **Flat 2D** in the Producer's Office for faster renders, or fewer stories per day. |
