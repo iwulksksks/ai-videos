@@ -66,8 +66,7 @@ export function ruleCheck(input: Story, style: StoryStyle): { story: Story; issu
     const before = b.cast.length;
     b.cast = b.cast.filter((c, j, arr) => c.who < n && arr.findIndex((o) => o.who === c.who) === j).slice(0, 3);
     if (b.cast.length !== before) issues.push(`Beat ${i + 1}: removed characters that don't exist`);
-    const onPhone = !!b.screen && b.screen !== "none" && b.screen !== "post";
-    if (!b.cast.length && !onPhone) {
+    if (!b.cast.length) {
       b.cast = [{ who: 0, mood: "happy", action: "idle" }];
       issues.push(`Beat ${i + 1}: nobody was on screen, added the hero`);
     }
@@ -126,15 +125,23 @@ export function ruleCheck(input: Story, style: StoryStyle): { story: Story; issu
   }
 
   if (style === "gossip") {
-    // Screens only make sense with their text; drop a screen the writer left empty.
+    // The episode opens on a Brickbury Bugle headline and closes on its correction.
+    story.beats.forEach((b) => {
+      if (b.card === "none") b.card = null;
+    });
     story.beats.forEach((b, i) => {
-      if (b.screen === "none") b.screen = null;
-      if (b.screen && b.screen !== "views" && !b.screenText?.trim()) {
-        b.screen = null;
-        if (!b.cast.length) b.cast = [{ who: 0, mood: "happy", action: "idle" }];
-        issues.push(`Beat ${i + 1}: removed a phone screen with no text`);
+      if (b.card && i !== 0 && i !== story.beats.length - 1) b.card = null;
+      if (b.card) {
+        b.line = null;
+        b.speaker = null;
       }
     });
+    if (story.beats[0].card !== "headline") {
+      story.beats.unshift({ ...story.beats[0], card: "headline", narration: story.title, line: null, speaker: null, prop: null, sfx: "ding" });
+      if (story.beats.length > r.maxBeats) story.beats.splice(Math.floor(story.beats.length / 2), 1);
+      issues.push("Added the newspaper headline opening");
+    }
+    if (story.beats[story.beats.length - 1].card !== "correction") issues.push("No closing correction card; the twist lands better as one");
     const last = story.beats[story.beats.length - 1];
     if (/\b(part 2|part two|to be continued|stay tuned|subscribe|follow)\b/i.test(last.narration)) {
       issues.push("The ending teases more; Town Gossip should stop on the ironic twist");

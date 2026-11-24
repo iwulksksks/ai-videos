@@ -4,12 +4,12 @@ import { AbsoluteFill, interpolate, useCurrentFrame, Easing } from "remotion";
 import type { Character, Look, StagedBeat, StoryStyle } from "../lib/story";
 import { HEIGHT, WIDTH } from "../lib/story";
 import { sceneLayers } from "./art/Backgrounds";
-import { BlockCharacterArt } from "./art/BlockCharacter";
 import { CharacterArt, motion } from "./art/Character";
 import { SKY, seeded } from "./art/palette";
 import { PropArt } from "./art/Props";
-import { PhoneScreen, PostOverlay } from "./Phone";
-import { GossipCaption, HookCaption, NarratorBox, SingleWordCaption, SpeechBubble } from "./Text";
+import { PaperCharacterArt } from "./art/PaperCharacter";
+import { NewsCard, PAPER_LAYER_FILTER, PaperFinish, Pigeon, TornCaption } from "./Paper";
+import { HookCaption, NarratorBox, SingleWordCaption, SpeechBubble } from "./Text";
 
 const FEET_Y = 1560;
 
@@ -45,7 +45,7 @@ function camera(beat: StagedBeat, frame: number, style: StoryStyle): CameraState
 
 // Depth of field is faked with "atmospheric haze" (a see-through wash of sky color on far layers).
 // A real CSS blur looks similar but makes CPU rendering about 3 times slower.
-function Layer({ children, depth, cam, look, haze = 0, hazeColor = "#ffffff" }: { children: React.ReactNode; depth: number; cam: CameraState; look: Look; haze?: number; hazeColor?: string }) {
+function Layer({ children, depth, cam, look, haze = 0, hazeColor = "#ffffff", paper = false }: { children: React.ReactNode; depth: number; cam: CameraState; look: Look; haze?: number; hazeColor?: string; paper?: boolean }) {
   const deep = look === "2.5d";
   const f = deep ? depth : 1;
   const zoom = 1 + (cam.zoom - 1) * f;
@@ -57,10 +57,19 @@ function Layer({ children, depth, cam, look, haze = 0, hazeColor = "#ffffff" }: 
       style={{
         transform: `perspective(2400px) translate(${tx}px, ${ty}px) scale(${zoom}) rotateY(${rot}deg)`,
         transformOrigin: `50% ${(FEET_Y / HEIGHT) * 100}%`,
+        // Paper look: the layer becomes a sheet of cut card with a white edge and a shadow.
+        filter: paper && depth >= 1 ? PAPER_LAYER_FILTER : undefined,
       }}
     >
       <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} width={WIDTH} height={HEIGHT} style={{ overflow: "visible" }}>
-        {children}
+        {/* Paper look: every shape without its own outline gets a white cut edge. */}
+        {paper ? (
+          <g stroke="#fffaf0" strokeWidth={6} strokeLinejoin="round" style={{ paintOrder: "stroke" }}>
+            {children}
+          </g>
+        ) : (
+          children
+        )}
         {deep && haze > 0 && <rect x={-700} y={-700} width={WIDTH + 1400} height={HEIGHT + 1400} fill={hazeColor} opacity={haze} />}
       </svg>
     </AbsoluteFill>
@@ -133,7 +142,7 @@ export const Scene: React.FC<{
           style === "twist" ? (
             <SingleWordCaption key={i} chunk={c} frame={frame - c.from} low={beat.camera === "insert"} />
           ) : style === "gossip" ? (
-            <GossipCaption key={i} chunk={c} frame={frame - c.from} low={!!beat.screen && beat.screen !== "none"} />
+            <TornCaption key={i} chunk={c} frame={frame - c.from} index={index * 10 + i} />
           ) : (
             <HookCaption key={i} chunk={c} frame={frame - c.from} />
           )
@@ -141,18 +150,9 @@ export const Scene: React.FC<{
       )
     );
 
-  const fullScreen = beat.screen && beat.screen !== "none" && beat.screen !== "post";
-  if (fullScreen) {
-    // A phone screen fills the frame (Town Gossip). A slow push keeps it alive.
-    const z = 1.04 + 0.05 * interpolate(frame, [0, beat.durationInFrames], [0, 1], { extrapolateRight: "clamp" });
-    return (
-      <AbsoluteFill style={{ backgroundColor: "#000", overflow: "hidden" }}>
-        <AbsoluteFill style={{ transform: `scale(${z})` }}>
-          <PhoneScreen screen={beat.screen!} frame={frame} total={beat.durationInFrames} text={beat.screenText ?? ""} count={beat.count ?? null} characters={characters} />
-        </AbsoluteFill>
-        {captions}
-      </AbsoluteFill>
-    );
+  const paper = style === "gossip";
+  if (paper && beat.card && beat.card !== "none") {
+    return <NewsCard beat={beat} frame={frame} characters={characters} kind={beat.card} />;
   }
 
   if (beat.camera === "insert" && beat.prop && beat.prop !== "none") {
@@ -178,27 +178,27 @@ export const Scene: React.FC<{
 
   return (
     <AbsoluteFill style={{ backgroundColor: "#000", overflow: "hidden", opacity: fadeIn }}>
-      <Layer depth={0.35} cam={cam} look={look} haze={beat.camera === "close" ? 0.3 : 0.16} hazeColor={SKY[beat.time].bottom}>
+      <Layer depth={0.35} cam={cam} look={look} haze={paper ? 0.06 : beat.camera === "close" ? 0.3 : 0.16} hazeColor={SKY[beat.time].bottom} paper={paper}>
         {layers.far}
       </Layer>
-      <Layer depth={1} cam={cam} look={look}>
+      <Layer depth={1} cam={cam} look={look} paper={paper}>
         {layers.mid}
+      </Layer>
+      <Layer depth={1} cam={cam} look={look}>
         {beat.cast.map((c, i) => {
           const ch = characters[c.who];
           if (!ch) return null;
           const talking = speaking && c.who === beat.speaker && frame < beat.lineStartFrame + Math.max(beat.lineFrames, 24);
           return (
             <g key={i} transform={`translate(${c.x * WIDTH} ${FEET_Y + i * 6}) scale(${c.scale})`}>
-              {style === "gossip" ? (
-                <BlockCharacterArt
+              {paper ? (
+                <PaperCharacterArt
                   character={ch}
                   mood={c.mood}
                   action={c.action}
                   frame={frame}
-                  look={look}
                   facing={c.facing}
                   talking={talking}
-                  time={beat.time}
                   seed={beat.seed + i * 31}
                 />
               ) : (
@@ -219,10 +219,10 @@ export const Scene: React.FC<{
           );
         })}
       </Layer>
-      <Layer depth={1.7} cam={cam} look={look}>
+      <Layer depth={1.7} cam={cam} look={look} paper={paper}>
         {layers.near}
       </Layer>
-      {deep && <Lighting beat={beat} frame={frame} />}
+      {paper ? <PaperFinish /> : deep && <Lighting beat={beat} frame={frame} />}
       {speaking && speakerCast && (
         <SpeechBubble
           text={beat.line!}
@@ -233,13 +233,11 @@ export const Scene: React.FC<{
             const sx = speakerCast.x * WIDTH + m.x * speakerCast.scale;
             return WIDTH / 2 + (sx - WIDTH / 2) * cam.zoom + cam.x;
           })()}
-          y={Math.max(260, FEET_Y - ((style === "gossip" ? 520 : 360) * speakerCast.scale + 120) * cam.zoom + cam.y)}
+          y={Math.max(260, FEET_Y - ((paper ? 470 : 360) * speakerCast.scale + 120) * cam.zoom + cam.y)}
           style={style}
         />
       )}
-      {beat.screen === "post" && (
-        <PostOverlay frame={frame} text={beat.screenText ?? ""} count={beat.count ?? null} poster={characters[beat.speaker ?? beat.cast[0]?.who ?? 0]} />
-      )}
+      {paper && <Pigeon frame={frame} talking={frame < beat.narrationFrames} enter={index === 1} />}
       {captions}
     </AbsoluteFill>
   );

@@ -59,7 +59,7 @@ export function captionChunks(text: string, frames: number, style: StoryStyle, n
   if (!ws.length) return [];
   const highlight = keyWord(text, names);
   if (style === "cozy") return [{ text, highlight, from: 0, to: frames }];
-  if (style === "twist" || style === "gossip") {
+  if (style === "twist") {
     // One big word at a time, timed by its length.
     const weights = ws.map((w) => w.length + 2);
     const total = weights.reduce((a, b) => a + b, 0);
@@ -110,7 +110,7 @@ function chooseCamera(beat: Beat, i: number, style: StoryStyle, total: number): 
   const reaction = beat.cast.some((c) => REACTION_MOODS.has(c.mood));
   if (beat.prop && beat.prop !== "none") return "insert";
   if (style === "gossip") {
-    if (beat.screen && beat.screen !== "none" && beat.screen !== "post") return "still";
+    if (beat.card && beat.card !== "none") return "still";
     if (i === 0) return "close"; // open on a face
     if (reaction && beat.cast.length <= 2) return "close";
     return (["push", "close", "pan-right", "still", "pan-left", "close"] as const)[i % 6];
@@ -153,8 +153,8 @@ export function stageStory(story: Story, style: StoryStyle, audio: BeatAudio[]):
     const hasLine = beat.speaker != null && !!beat.line;
     const lineSec = hasLine ? (a.lineSeconds ?? readingSeconds(beat.line!)) : 0;
     const gap = hasLine ? 0.15 : 0;
-    // Phone screens need a moment to read, even with short narration.
-    const screenMin = style === "gossip" && beat.screen && beat.screen !== "none" && beat.screen !== "post" ? 2.4 : 0;
+    // Newspaper cards need a moment to spin in and be read.
+    const screenMin = style === "gossip" && beat.card && beat.card !== "none" ? 2.6 : 0;
     const seconds = Math.max(minSeconds, screenMin, narrSec + gap + lineSec + pad);
     const durationInFrames = Math.round(seconds * FPS);
     const narrationFrames = Math.round(narrSec * FPS);

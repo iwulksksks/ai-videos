@@ -89,33 +89,6 @@ export const SingleWordCaption: React.FC<{ chunk: CaptionChunk; frame: number; l
   );
 };
 
-/** Town Gossip captions: one lowercase word at a time in a round, chunky font. */
-export const GossipCaption: React.FC<{ chunk: CaptionChunk; frame: number; low?: boolean }> = ({ chunk, frame, low }) => {
-  const { fps } = useVideoConfig();
-  const pop = spring({ frame, fps, config: { damping: 12, stiffness: 280, mass: 0.45 } });
-  return (
-    <AbsoluteFill style={low ? { justifyContent: "flex-end", alignItems: "center", paddingBottom: 380 } : { justifyContent: "center", alignItems: "center", paddingBottom: 760 }}>
-      <div
-        style={{
-          fontFamily: FREDOKA,
-          fontSize: 128,
-          lineHeight: 1,
-          textAlign: "center",
-          textTransform: "lowercase",
-          color: "#fff",
-          padding: "0 60px",
-          transform: `scale(${0.75 + 0.25 * pop})`,
-          WebkitTextStroke: "14px #1b1b24",
-          paintOrder: "stroke fill",
-          textShadow: "0 10px 0 rgba(0,0,0,0.3)",
-        }}
-      >
-        {chunk.text}
-      </div>
-    </AbsoluteFill>
-  );
-};
-
 export const NarratorBox: React.FC<{ text: string; highlight: string | null; frame: number }> = ({ text, highlight, frame }) => {
   const o = interpolate(frame, [4, 14], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (

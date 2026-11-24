@@ -1,4 +1,6 @@
-// Brickbury: the home town of every Town Gossip video.
+// Brickbury: the paper-cutout home town of every Town Gossip video.
+// Each episode opens with a headline in the town paper, is told by Mabel, a gossiping pigeon
+// in the corner of the screen, and closes with the paper's "correction" (the twist).
 // Pip is the one face in every episode. The neighbors around him rotate from a big pool,
 // their clothes change color from episode to episode, and each episode gets a different
 // story shape, so the videos don't all feel the same.
@@ -8,8 +10,8 @@ import { COLORS } from "./story";
 
 export const TOWN = {
   name: "Brickbury",
-  // A made-up video app, so stories never name a real one.
-  app: "Bloop",
+  paper: "The Brickbury Bugle",
+  narrator: "Mabel", // the pigeon who tells every story
 };
 
 export type Outfit =
@@ -28,7 +30,6 @@ export type Outfit =
 
 export type TownFolk = Character & {
   role: string; // for the writers
-  handle: string; // their @name on the app
   // How the toy-block renderer draws them. The shirt comes from `color`, which changes per episode.
   skin: string;
   pants: string;
@@ -42,7 +43,6 @@ export const HERO: TownFolk = {
   color: "orange",
   accessory: "hat",
   role: "the hero: an eager, slightly unlucky 11 year old who always has a plan; green cap worn backwards",
-  handle: "pip.official",
   skin: "#f2c79b",
   pants: "#3d5a99",
   hair: "#5a3a22",
@@ -52,18 +52,18 @@ export const HERO: TownFolk = {
 
 /** Neighbors. Each episode uses 2 to 4 of them. */
 export const NEIGHBORS: TownFolk[] = [
-  { name: "Nana Pearl", color: "purple", accessory: "glasses", role: "Pip's grandma: sweet, knits, secretly very competitive", handle: "nana.pearl", skin: "#f0c8a8", pants: "#6d5a8a", hair: "#eeeeee", outfit: "bun" },
-  { name: "Mayor Bigsby", color: "red", accessory: "scarf", role: "the mayor: loud, loves a ribbon cutting, jumps on every trend", handle: "mayor.bigsby", skin: "#e8b48c", pants: "#333a4a", hair: "#9a9a9a", outfit: "mayor" },
-  { name: "Zoe", color: "teal", accessory: "bow", role: "the teenager next door: always filming, knows what's cool", handle: "zoe.zoomz", skin: "#c98f62", pants: "#2b2b3a", hair: "#2a1a12", outfit: "ponytail" },
-  { name: "Chef Mo", color: "yellow", accessory: "hat", role: "the baker: big, gentle, turns everything into a pastry", handle: "chef.mo", skin: "#a8714a", pants: "#4a4a4a", hair: "#1a1a1a", outfit: "chef", fixedShirt: "#ffffff" },
-  { name: "Officer Dot", color: "blue", accessory: "hat", role: "the town's only police officer: takes tiny problems very seriously", handle: "officer.dot", skin: "#d9a27a", pants: "#1f2a44", hair: "#3a2a1a", outfit: "police" },
-  { name: "Mr. Fenn", color: "blue", accessory: "none", role: "the mail carrier: knows everyone's business, terrible at keeping secrets", handle: "fenn.delivers", skin: "#f2d0b0", pants: "#3a4a6a", hair: "#c9a060", outfit: "beanie" },
-  { name: "Coach Rhonda", color: "red", accessory: "none", role: "the gym coach: turns everything into a competition, has a whistle", handle: "coach.rhonda", skin: "#8a5a3c", pants: "#2a2a2a", hair: "#1a1a1a", outfit: "headband" },
-  { name: "Bolt", color: "green", accessory: "glasses", role: "Pip's best friend: a kid inventor whose gadgets almost work", handle: "bolt.builds", skin: "#c98f62", pants: "#4a3a2a", hair: "#2a1a12", outfit: "goggles" },
-  { name: "Lulu", color: "pink", accessory: "bow", role: "Pip's little sister, 6: says exactly what everyone is thinking", handle: "lulu", skin: "#f2c79b", pants: "#a05a8a", hair: "#5a3a22", outfit: "pigtails" },
-  { name: "Gus", color: "green", accessory: "none", role: "the grumpy old gardener next door: hates noise, secretly soft", handle: "gus.grows", skin: "#e8b48c", pants: "#5a4a3a", hair: "#bbbbbb", outfit: "bald" },
-  { name: "Mrs. Plum", color: "purple", accessory: "none", role: "runs the hair salon: the town's fastest gossip", handle: "plum.salon", skin: "#b07850", pants: "#4a2a4a", hair: "#7a2a5a", outfit: "curly" },
-  { name: "Ms. Kettle", color: "yellow", accessory: "glasses", role: "Pip's teacher: calm, tired, has seen everything", handle: "ms.kettle", skin: "#f0c8a8", pants: "#3a3a4a", hair: "#8a5a2a", outfit: "bun" },
+  { name: "Nana Pearl", color: "purple", accessory: "glasses", role: "Pip's grandma: sweet, knits, secretly very competitive", skin: "#f0c8a8", pants: "#6d5a8a", hair: "#eeeeee", outfit: "bun" },
+  { name: "Mayor Bigsby", color: "red", accessory: "scarf", role: "the mayor: loud, loves a ribbon cutting, jumps on every trend", skin: "#e8b48c", pants: "#333a4a", hair: "#9a9a9a", outfit: "mayor" },
+  { name: "Zoe", color: "teal", accessory: "bow", role: "the teenager next door: always filming, knows what's cool", skin: "#c98f62", pants: "#2b2b3a", hair: "#2a1a12", outfit: "ponytail" },
+  { name: "Chef Mo", color: "yellow", accessory: "hat", role: "the baker: big, gentle, turns everything into a pastry", skin: "#a8714a", pants: "#4a4a4a", hair: "#1a1a1a", outfit: "chef", fixedShirt: "#ffffff" },
+  { name: "Officer Dot", color: "blue", accessory: "hat", role: "the town's only police officer: takes tiny problems very seriously", skin: "#d9a27a", pants: "#1f2a44", hair: "#3a2a1a", outfit: "police" },
+  { name: "Mr. Fenn", color: "blue", accessory: "none", role: "the mail carrier: knows everyone's business, terrible at keeping secrets", skin: "#f2d0b0", pants: "#3a4a6a", hair: "#c9a060", outfit: "beanie" },
+  { name: "Coach Rhonda", color: "red", accessory: "none", role: "the gym coach: turns everything into a competition, has a whistle", skin: "#8a5a3c", pants: "#2a2a2a", hair: "#1a1a1a", outfit: "headband" },
+  { name: "Bolt", color: "green", accessory: "glasses", role: "Pip's best friend: a kid inventor whose gadgets almost work", skin: "#c98f62", pants: "#4a3a2a", hair: "#2a1a12", outfit: "goggles" },
+  { name: "Lulu", color: "pink", accessory: "bow", role: "Pip's little sister, 6: says exactly what everyone is thinking", skin: "#f2c79b", pants: "#a05a8a", hair: "#5a3a22", outfit: "pigtails" },
+  { name: "Gus", color: "green", accessory: "none", role: "the grumpy old gardener next door: hates noise, secretly soft", skin: "#e8b48c", pants: "#5a4a3a", hair: "#bbbbbb", outfit: "bald" },
+  { name: "Mrs. Plum", color: "purple", accessory: "none", role: "runs the hair salon: the town's fastest gossip", skin: "#b07850", pants: "#4a2a4a", hair: "#7a2a5a", outfit: "curly" },
+  { name: "Ms. Kettle", color: "yellow", accessory: "glasses", role: "Pip's teacher: calm, tired, has seen everything", skin: "#f0c8a8", pants: "#3a3a4a", hair: "#8a5a2a", outfit: "bun" },
 ];
 
 export const TOWN_CAST: TownFolk[] = [HERO, ...NEIGHBORS];
@@ -76,21 +76,21 @@ export function townFolk(name: string): TownFolk | undefined {
 
 // ---------- Story shapes: each episode gets a different kind of story ----------
 
-export type GossipShape = { id: string; name: string; plan: string; screens: boolean };
+export type GossipShape = { id: string; name: string; plan: string };
 
 export const GOSSIP_SHAPES: GossipShape[] = [
-  { id: "viral", name: "It went viral", plan: "Something small Pip does gets posted and blows up, the neighbors pile on with their own versions, it escalates, and Pip ends up left out of his own trend.", screens: true },
-  { id: "rumor", name: "The rumor", plan: "Someone half-hears something Pip said. It changes a little every time it's passed on, until the whole town believes something absurd. The truth comes out in a way that makes it worse, or better.", screens: false },
-  { id: "new-rule", name: "The new rule", plan: "The mayor (or someone in charge) makes a well-meant new rule because of something Pip did. Everyone follows it way too hard, chaos follows, and the rule gets undone in an ironic way.", screens: false },
-  { id: "contest", name: "The contest", plan: "A town contest (bake-off, pet show, science fair, garden prize, talent night). Everyone takes it far too seriously, sabotage and alliances happen, and the winner is the one nobody expected.", screens: false },
-  { id: "lost", name: "The lost thing", plan: "Pip loses something that matters. The whole town joins the search and each neighbor's 'help' makes it bigger and sillier. It was somewhere ridiculous the whole time.", screens: false },
-  { id: "gadget", name: "The gadget", plan: "Someone gets a new gadget or invention that promises to make life easier. It slowly takes over the town in funny ways, until one tiny thing breaks it.", screens: false },
-  { id: "secret", name: "The secret", plan: "Pip is trusted with a secret (a surprise party, a gift, a hidden talent). Keeping it gets harder and harder as neighbors get close. It comes out at the worst moment, and the ending is warm.", screens: false },
-  { id: "challenge", name: "The challenge", plan: "A silly challenge starts as a dare and spreads through town, getting harder each time someone tries it, until the least likely person tops everyone.", screens: true },
-  { id: "job-swap", name: "Job for a day", plan: "Pip takes over a neighbor's job for one day (mail route, bakery, salon, police desk). Every task goes sideways in a new way, but he accidentally fixes something nobody else could.", screens: false },
-  { id: "new-neighbor", name: "The new neighbor", plan: "Someone new moves to Brickbury (invent them, with a name, a color and one strange habit). The town guesses wild things about them. The real reason for the habit is sweet or funny.", screens: false },
-  { id: "prank", name: "The prank", plan: "Pip plans a harmless prank on a neighbor. Every step goes wrong, it snowballs across town, and the prank ends up landing on Pip himself.", screens: false },
-  { id: "power-out", name: "Everything stops", plan: "Something everyone depends on stops working for a day (power, phones, the town clock, the bridge). Everyone copes in their own odd way and the town is better for it, until it comes back.", screens: false },
+  { id: "mix-up", name: "The mix-up", plan: "Two things (or two neighbors' orders, letters, pets or bags) get swapped by accident. Each neighbor reacts to the wrong thing in their own way, the confusion spreads, and the swap back creates one last surprise." },
+  { id: "rumor", name: "The rumor", plan: "Someone half-hears something Pip said. It changes a little every time it's passed on, until the whole town believes something absurd. The truth comes out in a way that makes it worse, or better." },
+  { id: "new-rule", name: "The new rule", plan: "The mayor (or someone in charge) makes a well-meant new rule because of something Pip did. Everyone follows it way too hard, chaos follows, and the rule gets undone in an ironic way." },
+  { id: "contest", name: "The contest", plan: "A town contest (bake-off, pet show, science fair, garden prize, talent night). Everyone takes it far too seriously, sabotage and alliances happen, and the winner is the one nobody expected." },
+  { id: "lost", name: "The lost thing", plan: "Pip loses something that matters. The whole town joins the search and each neighbor's 'help' makes it bigger and sillier. It was somewhere ridiculous the whole time." },
+  { id: "gadget", name: "The gadget", plan: "Someone gets a new gadget or invention that promises to make life easier. It slowly takes over the town in funny ways, until one tiny thing breaks it." },
+  { id: "secret", name: "The secret", plan: "Pip is trusted with a secret (a surprise party, a gift, a hidden talent). Keeping it gets harder and harder as neighbors get close. It comes out at the worst moment, and the ending is warm." },
+  { id: "challenge", name: "The challenge", plan: "A silly challenge starts as a dare and spreads through town, getting harder each time someone tries it, until the least likely person tops everyone." },
+  { id: "job-swap", name: "Job for a day", plan: "Pip takes over a neighbor's job for one day (mail route, bakery, salon, police desk). Every task goes sideways in a new way, but he accidentally fixes something nobody else could." },
+  { id: "new-neighbor", name: "The new neighbor", plan: "Someone new moves to Brickbury (invent them, with a name, a color and one strange habit). The town guesses wild things about them. The real reason for the habit is sweet or funny." },
+  { id: "prank", name: "The prank", plan: "Pip plans a harmless prank on a neighbor. Every step goes wrong, it snowballs across town, and the prank ends up landing on Pip himself." },
+  { id: "power-out", name: "Everything stops", plan: "Something everyone depends on stops working for a day (power, phones, the town clock, the bridge). Everyone copes in their own odd way and the town is better for it, until it comes back." },
 ];
 
 export function shapeById(id: string | null | undefined): GossipShape | undefined {
@@ -135,23 +135,4 @@ export function episodeCast(neighborNames: string[], rand: () => number = Math.r
     { name: HERO.name, color: HERO.color, accessory: HERO.accessory },
     ...folks.slice(0, 4).map((f, i) => ({ name: f.name, color: colors[i % colors.length], accessory: f.accessory })),
   ];
-}
-
-/** "12M" -> 12000000. Returns 0 when it can't read it. */
-export function parseCount(s: string | null | undefined): number {
-  if (!s) return 0;
-  const m = /([\d.,]+)\s*([kmb])?/i.exec(s);
-  if (!m) return 0;
-  const n = parseFloat(m[1].replace(/,/g, ""));
-  const mult = { k: 1e3, m: 1e6, b: 1e9 }[(m[2] ?? "").toLowerCase() as "k" | "m" | "b"] ?? 1;
-  return Math.round(n * mult);
-}
-
-/** 12000000 -> "12M", 1530 -> "1.5K". */
-export function formatCount(n: number): string {
-  const f = (v: number, u: string) => `${v >= 100 ? Math.round(v) : Math.round(v * 10) / 10}${u}`;
-  if (n >= 1e9) return f(n / 1e9, "B");
-  if (n >= 1e6) return f(n / 1e6, "M");
-  if (n >= 1e3) return f(n / 1e3, "K");
-  return String(Math.round(n));
 }

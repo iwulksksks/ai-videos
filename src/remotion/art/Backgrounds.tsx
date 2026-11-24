@@ -31,7 +31,7 @@ function Sky({ time, id }: { time: TimeOfDay; id: string }) {
         Array.from({ length: 70 }, (_, i) => (
           <circle key={i} cx={L + r() * W} cy={-300 + r() * 1300} r={1.5 + r() * 3} fill="#fff" opacity={0.4 + r() * 0.6} />
         ))}
-      <circle cx={time === "sunset" ? 760 : 820} cy={time === "sunset" ? 980 : 330} r={time === "night" ? 170 : 260} fill={`url(#sun-${id})`} />
+      <circle cx={time === "sunset" ? 760 : 820} cy={time === "sunset" ? 980 : 330} r={time === "night" ? 170 : 260} fill={`url(#sun-${id})`} stroke="none" />
       <circle cx={time === "sunset" ? 760 : 820} cy={time === "sunset" ? 980 : 330} r={time === "night" ? 70 : 95} fill={time === "night" ? "#f4f1de" : time === "sunset" ? "#ffd27a" : "#fff6c2"} />
       {time !== "night" &&
         [0, 1, 2].map((i) => {
@@ -151,49 +151,62 @@ function Banner({ x, y, color, time }: { x: number; y: number; color: string; ti
 }
 
 
-// ---------- Brickbury (Town Gossip): chunky toy-block buildings ----------
+// ---------- Brickbury (Town Gossip): storybook paper buildings ----------
+// Each piece has a white cut edge so it looks like card; the Scene adds the paper shadows.
+
+// A white cut edge on every piece (cheap: a stroke painted under the fill).
+const CUT_EDGE = { stroke: "#fffaf0", strokeWidth: 8, strokeLinejoin: "round" as const, paintOrder: "stroke" as const };
 
 function BlockHouse({ x, y, w, h, wall, roof, time, seed }: { x: number; y: number; w: number; h: number; wall: string; roof: string; time: TimeOfDay; seed: number }) {
   const r = seeded(seed);
-  const d = 40;
+  const lean = (r() - 0.5) * 18; // storybook houses lean a little
   const lit = time === "night";
-  const win = (wx: number, wy: number) => (
+  const win = (wx: number, wy: number, round: boolean) => (
     <g key={`${wx}-${wy}`}>
-      <rect x={wx - 6} y={wy - 6} width={62} height={72} fill={tod("#fdf6e8", time)} />
-      <rect x={wx} y={wy} width={50} height={60} fill={lit ? (r() > 0.35 ? "#ffd56a" : "#2c3560") : tod("#9fd3ff", time)} />
-      <rect x={wx + 22} y={wy} width={6} height={60} fill={tod("#fdf6e8", time)} />
+      <rect x={wx} y={wy} width={50} height={62} rx={round ? 25 : 6} fill={lit ? (r() > 0.35 ? "#ffd56a" : "#2c3560") : tod("#fdf6e8", time)} />
+      {!lit && <rect x={wx + 8} y={wy + 8} width={34} height={46} rx={round ? 17 : 4} fill={tod("#9fd3ff", time)} />}
     </g>
   );
   const cols = Math.max(1, Math.floor((w - 40) / 90));
   const rows = Math.max(1, Math.floor((h - 150) / 110));
+  const round = r() > 0.5;
   return (
-    <g>
-      {/* side wall */}
-      <path d={`M ${x + w} ${y - h} l ${d} ${-d * 0.6} l 0 ${h} l ${-d} ${d * 0.6} Z`} fill={tod(shade(wall, -0.3), time)} />
-      {/* front wall */}
-      <rect x={x} y={y - h} width={w} height={h} fill={tod(wall, time)} />
-      {/* roof: a box with a lit top */}
-      <path d={`M ${x - 20} ${y - h} L ${x + w / 2} ${y - h - w * 0.36} L ${x + w + 20} ${y - h} Z`} fill={tod(roof, time)} />
-      <path d={`M ${x + w / 2} ${y - h - w * 0.36} l ${d} ${-d * 0.6} L ${x + w + 20 + d} ${y - h - d * 0.6} L ${x + w + 20} ${y - h} Z`} fill={tod(shade(roof, -0.25), time)} />
-      {Array.from({ length: rows }, (_, j) => Array.from({ length: cols }, (_, i) => win(x + 30 + i * ((w - 60) / cols) + ((w - 60) / cols - 50) / 2, y - h + 40 + j * 110)))}
-      {/* door */}
-      <rect x={x + w / 2 - 34} y={y - 120} width={68} height={120} fill={tod(shade(roof, -0.2), time)} />
-      <circle cx={x + w / 2 + 20} cy={y - 60} r={6} fill="#ffd23f" />
+    <g {...CUT_EDGE}>
+      <path d={`M ${x} ${y} L ${x + 4} ${y - h} L ${x + w - 4} ${y - h + 6} L ${x + w} ${y} Z`} fill={tod(wall, time)} />
+      <path d={`M ${x - 28} ${y - h + 10} L ${x + w / 2 + lean} ${y - h - w * 0.5} L ${x + w + 28} ${y - h + 16} Z`} fill={tod(roof, time)} />
+      <rect x={x + w * 0.68} y={y - h - w * 0.42} width={30} height={70} fill={tod(shade(roof, -0.25), time)} />
+      {Array.from({ length: rows }, (_, j) => Array.from({ length: cols }, (_, i) => win(x + 30 + i * ((w - 60) / cols) + ((w - 60) / cols - 50) / 2, y - h + 50 + j * 110, round)))}
+      <path d={`M ${x + w / 2 - 34} ${y} L ${x + w / 2 - 34} ${y - 96} Q ${x + w / 2} ${y - 136} ${x + w / 2 + 34} ${y - 96} L ${x + w / 2 + 34} ${y} Z`} fill={tod(shade(roof, -0.15), time)} />
+      <circle cx={x + w / 2 + 18} cy={y - 50} r={6} fill="#ffd23f" />
     </g>
   );
 }
 
+/** A washing line with socks and shirts, strung between houses. */
 function Bunting({ y, sag, time, from = L, to = R }: { y: number; sag: number; time: TimeOfDay; from?: number; to?: number }) {
-  const n = Math.floor((to - from) / 70);
-  const cols = ["#ff5a5a", "#ffd23f", "#4f9dff", "#5ccf6b", "#a77bff", "#ff9a3c"];
+  const n = Math.floor((to - from) / 150);
+  const cols = ["#ff8a8a", "#ffe08a", "#8ac4ff", "#9ee6a0", "#c9a8ff", "#ffb87a"];
+  const r = seeded(Math.round(from + y));
   return (
     <g>
-      <path d={`M ${from} ${y} Q ${(from + to) / 2} ${y + sag * 2} ${to} ${y}`} stroke="#444" strokeWidth={4} fill="none" />
+      <path d={`M ${from} ${y} Q ${(from + to) / 2} ${y + sag * 2} ${to} ${y}`} stroke="#5a4a3a" strokeWidth={4} fill="none" />
       {Array.from({ length: n }, (_, i) => {
         const t = (i + 0.5) / n;
         const px = from + (to - from) * t;
-        const py = y + sag * 4 * t * (1 - t) * 1;
-        return <rect key={i} x={px - 18} y={py} width={36} height={40} fill={tod(cols[i % cols.length], time)} />;
+        const py = y + sag * 4 * t * (1 - t);
+        const c = tod(cols[Math.floor(r() * cols.length)], time);
+        const kind = Math.floor(r() * 3);
+        return (
+          <g key={i} {...CUT_EDGE} transform={`translate(${px} ${py}) rotate(${(r() - 0.5) * 12})`}>
+            {kind === 0 ? (
+              <path d="M -40 0 L 40 0 L 56 24 L 40 32 L 40 90 L -40 90 L -40 32 L -56 24 Z" fill={c} />
+            ) : kind === 1 ? (
+              <path d="M -12 0 L 12 0 L 12 56 Q 34 58 34 74 L -12 74 Z" fill={c} />
+            ) : (
+              <path d="M -34 0 L 34 0 L 30 70 L 4 70 L 0 40 L -4 70 L -30 70 Z" fill={c} />
+            )}
+          </g>
+        );
       })}
     </g>
   );
@@ -209,13 +222,13 @@ function LampPost({ x, y, time, h = 520 }: { x: number; y: number; time: TimeOfD
   );
 }
 
+/** A paper lollipop tree. */
 function BlockTree({ x, y, s, time }: { x: number; y: number; s: number; time: TimeOfDay }) {
   return (
-    <g transform={`translate(${x} ${y}) scale(${s})`}>
-      <rect x={-16} y={-110} width={32} height={110} fill={tod("#7a5236", time)} />
-      <rect x={-80} y={-260} width={160} height={160} rx={12} fill={tod("#3fae5a", time)} />
-      <path d="M 80 -260 l 30 -18 l 0 160 l -30 18 Z" fill={tod("#2d8a45", time)} />
-      <path d="M -80 -260 l 30 -18 l 160 0 l -30 18 Z" fill={tod("#64c878", time)} />
+    <g transform={`translate(${x} ${y}) scale(${s})`} {...CUT_EDGE}>
+      <path d="M -14 0 L -10 -130 L 10 -130 L 14 0 Z" fill={tod("#8a5a3b", time)} />
+      <circle cx={0} cy={-210} r={100} fill={tod("#5fb86a", time)} />
+      <circle cx={-30} cy={-240} r={40} fill={tod("#7fd08a", time)} />
     </g>
   );
 }
@@ -791,7 +804,7 @@ export function sceneLayers(setting: Setting, time: TimeOfDay, id: string): Laye
         far: (
           <g>
             <Sky time={time} id={id} />
-            <Hills time={time} y={900} color="#8fcf8a" amp={90} seed={5} />
+            <g {...CUT_EDGE}><Hills time={time} y={900} color="#8fcf8a" amp={90} seed={5} /></g>
             {[-380, -60, 260, 580, 900, 1220].map((x, i) => (
               <BlockHouse key={x} x={x} y={1150} w={260} h={300 + (i % 3) * 70} wall={TOWN_HOUSES[i].wall} roof={TOWN_HOUSES[i].roof} time={time} seed={i + 3} />
             ))}
@@ -824,7 +837,7 @@ export function sceneLayers(setting: Setting, time: TimeOfDay, id: string): Laye
         far: (
           <g>
             <Sky time={time} id={id} />
-            <Hills time={time} y={880} color="#86c47f" amp={70} seed={9} />
+            <g {...CUT_EDGE}><Hills time={time} y={880} color="#86c47f" amp={70} seed={9} /></g>
             <BlockHouse x={-340} y={1140} w={300} h={380} wall={TOWN_HOUSES[4].wall} roof={TOWN_HOUSES[4].roof} time={time} seed={21} />
             {/* town hall with a clock tower */}
             <g>

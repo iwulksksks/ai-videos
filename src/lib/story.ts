@@ -33,9 +33,9 @@ export const CAMERAS = ["push", "pan-left", "pan-right", "still", "close", "inse
 export const PROPS = ["none", "gear", "lever", "bell", "jar", "rail", "pendulum", "wheel", "rope"] as const;
 export const SFX = ["none", "rumble", "snap", "crash", "whoosh", "ding"] as const;
 export const MUSIC_MOODS = ["playful", "tender", "mystery", "adventure", "dreamy", "epic", "curious"] as const;
-// Phone-screen scenes drawn in code (Town Gossip): a post, a view counter, a comment list,
-// a wall of copycat videos, and the "original sound" page.
-export const SCREENS = ["none", "post", "views", "comments", "copycats", "sound"] as const;
+// Town Gossip's newspaper cards: a "Brickbury Bugle" headline opens the episode and a
+// "correction" closes it with the twist.
+export const CARDS = ["none", "headline", "correction"] as const;
 export const STYLES = ["twist", "hook", "cozy", "gossip"] as const;
 export const LOOKS = ["2.5d", "flat"] as const;
 export const ENGINES = ["auto", "ollama", "claude", "demo"] as const;
@@ -53,7 +53,7 @@ export type Look = (typeof LOOKS)[number];
 export type Engine = (typeof ENGINES)[number];
 export type Prop = (typeof PROPS)[number];
 export type Sfx = (typeof SFX)[number];
-export type Screen = (typeof SCREENS)[number];
+export type Card = (typeof CARDS)[number];
 
 // ---------- What the AI writers return ----------
 
@@ -107,9 +107,7 @@ export const BeatSchema = z.object({
   line: z.string().max(140).nullable().optional(),
   prop: z.enum(PROPS).nullable().optional(), // object to show in close-up
   sfx: z.enum(SFX).nullable().optional(), // sound effect at the start of the beat
-  screen: z.enum(SCREENS).nullable().optional(), // a phone-screen scene instead of the set
-  screenText: z.string().max(48).nullable().optional(), // the catchphrase or post caption on the screen
-  count: z.string().max(12).nullable().optional(), // view count shown on the screen, like "12M" or "1K"
+  card: z.enum(CARDS).nullable().optional(), // Town Gossip: show this beat as a newspaper card
 });
 export type Beat = z.infer<typeof BeatSchema>;
 

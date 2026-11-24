@@ -6,7 +6,6 @@ import {
   SFX,
   COLORS,
   EXPRESSIONS,
-  SCREENS,
   SETTINGS,
   STYLE_RULES,
   TIMES,
@@ -19,9 +18,10 @@ import {
 import { HERO, NEIGHBORS, TOWN, episodeCast, shapeById, townFolk, type EpisodePlan } from "../town";
 
 const TOWN_INTRO =
-  `Town Gossip episodes all happen in ${TOWN.name}, a bright toy-block town. Pip (${HERO.role}) is in every episode. ` +
-  `Every episode has a DIFFERENT kind of story, different neighbors and a different situation, so no two videos feel alike. ` +
-  `If people post videos, they use a made-up app called ${TOWN.app}. Never name a real app, site, brand or celebrity.`;
+  `Town Gossip episodes all happen in ${TOWN.name}, a paper-cutout storybook town. Pip (${HERO.role}) is in every episode. ` +
+  `The narrator is ${TOWN.narrator}, a nosy pigeon in reading glasses and a headscarf who sees everything from the rooftops. She tells the story to the viewer like juicy gossip: first person, conspiratorial, a little dramatic ("okay, so", "and honey,", "I saw the whole thing"), but she never uses the same opener twice in a row. ` +
+  `Each episode opens with a headline in the town paper, ${TOWN.paper}, and closes with the paper's correction, which reveals what really happened. ` +
+  `Every episode has a DIFFERENT kind of story, different neighbors and a different situation, so no two videos feel alike. Stories come from town life, not the internet. Never name a real app, site, brand or celebrity.`;
 
 function folkLine(name: string, i: number, color?: string): string {
   const f = townFolk(name);
@@ -122,12 +122,12 @@ function vocab(style?: StoryStyle): string {
     `Character colors: ${COLORS.join(", ")}. Accessories: ${ACCESSORIES.join(", ")}.`,
     `Moods: ${EXPRESSIONS.join(", ")}. Actions: ${ACTIONS.join(", ")}.`,
     style === "gossip"
-      ? "Characters are chunky toy-block people. In each beat, 'cast' lists who is on screen by their index in 'characters' (0 to 4), with a mood and action. Use at most 3 on screen."
+      ? "Characters are paper-cutout puppets. In each beat, 'cast' lists who is on screen by their index in 'characters' (0 to 4), with a mood and action. Use at most 3 on screen."
       : "Characters are simple round cartoon blobs, so describe them only by name, color and accessory.",
     style === "gossip" ? "" : "In each beat, 'cast' lists who is on screen by their index in 'characters' (0, 1 or 2), with a mood and action. Use at most 3 on screen.",
     "'speaker' is the index of the character saying 'line' in that beat, or null when nobody speaks. 'line' is null when nobody speaks.",
     `Optional per beat: 'prop' (${PROPS.join(", ")}) shows a big close-up of that object instead of the characters, for explaining how something works; 'sfx' (${SFX.join(", ")}) plays a sound effect as the beat starts. Use null when not needed.`,
-    style === "gossip" ? `Optional per beat: 'screen' (${SCREENS.join(", ")}), 'screenText' and 'count', as described above.` : "",
+    style === "gossip" ? "'card' is 'headline' on the first beat, 'correction' on the last beat, and null on every other beat." : "",
     "caption: a short, punchy social caption (one or two sentences). hashtags: 5 to 8 tags without the # sign.",
   ]
     .filter(Boolean)
@@ -154,14 +154,14 @@ function gossipRules(pitch: Pitch): string[] {
     `'characters' JSON: ${JSON.stringify(cast)}`,
     shape ? `Story shape: "${shape.name}". ${shape.plan}` : "Story shape: build from something tiny to something absurd, then twist.",
     "Every scene should make sense for THIS situation: pick settings that fit it, and give each neighbor something only they would do.",
-    "One casual third-person narrator, fast and deadpan. Each beat's narration is ONE short sentence, ideally 4 to 10 words, so the picture cuts about every 3 seconds.",
-    "Beat 1 is a cold open on the strangest or funniest moment, with no explanation. The middle escalates, one neighbor at a time. The ending is a twist (ironic, sweet or absurd) with one final punch-line beat.",
-    `Characters may speak short lines (under ${r.maxLineWords} words), at most 6 in the episode. Don't repeat the same line over and over.`,
+    `Beat 1 is the HEADLINE card ('card': 'headline'): its narration is a punchy, slightly wrong newspaper headline of 5 to 10 words that makes people need to know more (for example "Local Boy Steals Moon, Says Mayor"). Put the characters it is about in its cast. No line.`,
+    `Beat 2 is a cold open on the strangest or funniest moment, with ${TOWN.narrator} pulling the viewer in.`,
+    `Then ${TOWN.narrator} tells how it happened, escalating one neighbor at a time, each doing something only they would do.`,
+    `The LAST beat is the CORRECTION card ('card': 'correction'): its narration starts with "Correction:" and reveals the twist in one funny sentence that flips the headline. Everything before it builds to it.`,
+    `Narration: ${TOWN.narrator} speaks every beat in first person, ONE short sentence per beat, ideally 5 to 12 words, so the picture changes about every 3 seconds.`,
+    `Characters may speak short lines (under ${r.maxLineWords} words), at most 6 in the episode. Don't repeat the same line over and over, and don't build the episode around a catchphrase.`,
     `Use settings that fit the story: ${["town", "plaza", "cafe", "classroom", "bedroom", "market", "forest", "beach", "workshop", "lab", "harbor", "city"].join(", ")}. Vary them.`,
-    shape?.screens
-      ? `Phone screens fit this shape: set 'screen' to one of ${SCREENS.filter((x) => x !== "none").join(", ")} on 2 to 4 beats, with 'screenText' (under 6 words) and 'count' (like "12M", "340K" or "1K") where it shows a number. Other beats use screen null.`
-      : "Phone screens: this shape is mostly NOT about the internet. Use screen null on every beat, except at most one 'comments' or 'post' beat if it truly fits.",
-    "The last beat ends on the punch line: no 'part 2', no 'follow for more', so it loops.",
+    "The correction is the punch line: no 'part 2', no 'follow for more', so it loops.",
     "Title: 3 to 7 words, catchy. caption: one short funny line. hashtags: 4 to 6.",
   ];
 }
@@ -218,7 +218,7 @@ export function storyPrompt(pitch: Pitch, style: StoryStyle): string {
     vocab(style),
     "",
         style === "gossip"
-      ? 'Answer as JSON: {"title":"...","logline":"...","mechanism":null,"characters":[{"name":"...","color":"...","accessory":"..."}],"beats":[{"setting":"...","time":"...","narration":"...","cast":[{"who":0,"mood":"...","action":"..."}],"speaker":null,"line":null,"prop":null,"sfx":null,"screen":null,"screenText":null,"count":null}],"caption":"...","hashtags":["..."]}'
+      ? 'Answer as JSON: {"title":"...","logline":"...","mechanism":null,"characters":[{"name":"...","color":"...","accessory":"..."}],"beats":[{"setting":"...","time":"...","narration":"...","cast":[{"who":0,"mood":"...","action":"..."}],"speaker":null,"line":null,"prop":null,"sfx":null,"card":null}],"caption":"...","hashtags":["..."]}'
       : 'Answer as JSON: {"title":"...","logline":"...","mechanism":null,"characters":[{"name":"...","color":"...","accessory":"..."}],"beats":[{"setting":"...","time":"...","narration":"...","cast":[{"who":0,"mood":"...","action":"..."}],"speaker":null,"line":null,"prop":null,"sfx":null}],"caption":"...","hashtags":["..."]}',
   ]
     .filter((l) => l !== "")
@@ -234,7 +234,7 @@ export function editPrompt(story: Story, style: StoryStyle, issues: string[]): s
     style === "twist"
       ? "Check: beat 1 is a strange act with no context; a 'You see,' setup; one quoted mocking line; the sensible choice looks right, then fails; the mechanism is explained in plain words; it ends on the punch line with no cliffhanger. FACT CHECK: the 'mechanism' must be real and explained correctly. If it is wrong, made up, or you are not sure it is true, the verdict is 'rejected'."
       : style === "gossip"
-      ? "Check: Pip is character 0; a cold open; it escalates one neighbor at a time; each neighbor does something only they would do; the ending twist lands; no 'part 2' or 'follow'; narration lines are short; it is actually funny; it doesn't lean on one repeated catchphrase; phone screens only where they fit; no real app, brand or person is named."
+      ? "Check: Pip is character 0; beat 1 is a 'headline' card with a punchy headline; beat 2 is a cold open; Mabel the pigeon narrates in first person, gossipy and short; it escalates one neighbor at a time, each doing something only they would do; the last beat is a 'correction' card starting with 'Correction:' that lands the twist; no 'part 2' or 'follow'; it is actually funny; no catchphrase repeated over and over; it's about town life, not the internet; no real app, brand or person is named."
       : style === "hook"
       ? "Check: first line states the world's rule; first person; underdog; clear reveal far beyond everyone; shocked reactions; ends on a cliffhanger; every narration line is short and punchy."
       : "Check: clear setup, problem, turn and payoff; gentle and funny; no moral lecture.",
