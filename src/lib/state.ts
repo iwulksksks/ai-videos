@@ -12,11 +12,11 @@ import { tiktokStatus } from "./tiktok";
 import { youtubeStatus } from "./youtube";
 import type { Story } from "./story";
 import { claudeAvailable } from "./writers/claude";
-import { ollamaStatus } from "./writers/ollama";
+import { ollamaStatusCached } from "./writers/ollama";
 
 export async function studioState() {
   const jobs = getDb().prepare("SELECT * FROM jobs ORDER BY id DESC LIMIT 30").all() as JobRow[];
-  const ollama = await ollamaStatus();
+  const ollama = await ollamaStatusCached();
   const trends = latestReport();
   return {
     settings: getSettings(),
