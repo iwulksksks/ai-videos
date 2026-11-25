@@ -32,7 +32,7 @@ export function ruleCheck(input: Story, style: StoryStyle, length: VideoLength =
   const story: Story = structuredClone(input);
 
   // Town Gossip: Pip leads every episode; the neighbors around him change.
-  if ((style === "gossip" || style === "whatif" || style === "pov") && story.characters[0]?.name.toLowerCase() !== HERO.name.toLowerCase()) {
+  if ((style === "gossip" || style === "whatif" || style === "pov" || style === "country") && story.characters[0]?.name.toLowerCase() !== HERO.name.toLowerCase()) {
     issues.push("Pip isn't character 0 in this episode");
   }
   // Characters: unique names, at most 3 (Town Gossip has its fixed cast of 5).
@@ -102,7 +102,7 @@ export function ruleCheck(input: Story, style: StoryStyle, length: VideoLength =
 
   // Hook and Twist Tale: dialogue is rare.
   if (style !== "cozy") {
-    const max = (style === "twist" || style === "whatif" ? 3 : style === "gossip" ? 6 : style === "pov" ? 5 : 4) * (length === "long" ? 2 : 1);
+    const max = (style === "twist" || style === "whatif" ? 3 : style === "gossip" ? 6 : style === "pov" || style === "country" ? 5 : 4) * (length === "long" ? 2 : 1);
     const lines = story.beats.filter((b) => b.line);
     if (lines.length > max) {
       lines.slice(max).forEach((b) => {
@@ -184,6 +184,46 @@ export function ruleCheck(input: Story, style: StoryStyle, length: VideoLength =
     const last = story.beats[story.beats.length - 1];
     if (/\b(part 2|part two|to be continued|stay tuned|subscribe|follow)\b/i.test(last.narration)) {
       issues.push("The ending teases more; What If should stop on the most extreme step");
+    }
+  }
+
+  if (style === "country") {
+    // A passport stamp opens the trip, one fact postcard reveals the real reason, a postcard home closes it.
+    const lastIdx = story.beats.length - 1;
+    let factSeen = false;
+    story.beats.forEach((b, i) => {
+      if (b.card === "none") b.card = null;
+      const ok = (b.card === "passport" && i === 0) || (b.card === "postcard" && i === lastIdx) || (b.card === "fact" && !factSeen && i > 0 && i < lastIdx);
+      if (b.card && !ok) b.card = null;
+      if (b.card === "fact") factSeen = true;
+      if (b.card) {
+        b.line = null;
+        b.speaker = null;
+        b.prop = null;
+      }
+      if (b.place != null) b.place = b.place.trim().slice(0, 40) || null;
+    });
+    if (!story.country || !story.country.trim()) issues.push("No country set; the passport and luggage tag will say 'Abroad'");
+    if (story.beats[0].card !== "passport") {
+      story.beats.unshift({ ...story.beats[0], card: "passport", narration: story.title, line: null, speaker: null, prop: null, sfx: "ding", cast: [{ who: 0, mood: "excited", action: "idle" }] });
+      if (story.beats.length > r.maxBeats) story.beats.splice(Math.floor(story.beats.length / 2), 1);
+      issues.push("Added the passport stamp opening");
+    }
+    if (!factSeen) {
+      const at = story.beats.findIndex((b, i) => i > 0 && /real reason/i.test(b.narration));
+      if (at > 0 && at < story.beats.length - 1) {
+        story.beats[at].card = "fact";
+        story.beats[at].line = null;
+        story.beats[at].speaker = null;
+        issues.push("Showed the real reason on the fact postcard");
+      } else issues.push("No clear 'The real reason?' reveal");
+    }
+    if (story.beats[story.beats.length - 1].card !== "postcard") issues.push("No postcard home at the end; the story lands better with one");
+    if (!story.beats.some((b) => /\b(I|my|me)\b/.test(b.narration))) issues.push("Narration isn't in the first person ('I')");
+    if (!story.mechanism || story.mechanism.trim().length < 15) issues.push("The real fact isn't written down in 'mechanism' for fact-checking");
+    const last = story.beats[story.beats.length - 1];
+    if (/\b(part 2|part two|to be continued|stay tuned|subscribe|follow)\b/i.test(last.narration)) {
+      issues.push("The ending teases more; Country Stories end on the postcard home");
     }
   }
 

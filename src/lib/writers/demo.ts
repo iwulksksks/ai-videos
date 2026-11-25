@@ -677,6 +677,91 @@ const POV_EPISODES: PovEpisode[] = [
   },
 ];
 
+// ---------------- Country Story ----------------
+// Pip's trip to one real country, built around one true fun fact about it. Long (about 2.5 min).
+
+type CountryEpisode = { pitch: Pitch; build: () => Story };
+
+const COUNTRY_EPISODES: CountryEpisode[] = [
+  {
+    pitch: {
+      title: "Why the Sun Wouldn't Set in Iceland",
+      logline: "Pip flies to Iceland in June to see the stars and the northern lights, and night never comes.",
+      genre: "nature",
+      twist: "In June, Reykjavik's sun sets after midnight and rises before three, so the sky never gets dark.",
+      mechanism:
+        "Earth is tilted about 23.4 degrees, so in June the far north leans toward the sun: in Reykjavik the sun sets just after midnight and rises before 3 a.m., and the sky stays light. In December it flips, with only about four hours of daylight, which is when the northern lights show.",
+      era: "Iceland",
+      skeptic: "Sigga, a tour bus driver",
+    },
+    build: () => {
+      // The "beach" set has palm trees, so the black sand beach uses the harbor shore instead.
+      const C = "city", H = "harbor", BR = "bedroom", CA = "cafe", K = "canyon", BE = "harbor";
+      const pip = episodeCast([])[0];
+      return {
+        title: "Why the Sun Wouldn't Set in Iceland",
+        logline: "Pip flies to Iceland in June to see the stars and the northern lights, and night never comes.",
+        mechanism:
+          "Earth is tilted about 23.4 degrees, so in June the far north leans toward the sun: in Reykjavik the sun sets just after midnight and rises before 3 a.m., and the sky stays light. In December it flips, with only about four hours of daylight, the best time for the northern lights.",
+        country: "Iceland",
+        characters: [pip, { name: "Sigga", color: "teal", accessory: "scarf" }],
+        beats: [
+          beat(C, "day", "In Iceland, I waited all night for it to get dark. It never did.", [on(0, "excited")], { card: "passport", sfx: "ding", place: "Keflavik" }),
+          beat(C, "day", "I saved up all year for one thing: the northern lights.", [on(0, "excited", "jump")], { place: "Keflavik" }),
+          beat(C, "day", "Green ribbons of light, dancing across a black sky.", [on(0, "happy")]),
+          beat(C, "day", "So I packed a telescope, a star map and three flashlights.", [on(0, "happy", "walk")], { sfx: "whoosh" }),
+          beat(C, "day", "It was June. Summer vacation. Perfect timing, I thought.", [on(0, "thinking")]),
+          beat(C, "day", "My bus driver into town was Sigga.", [on(0, "happy"), on(1, "happy", "enter")], { place: "Reykjavik" }),
+          beat(C, "day", "She was wearing a big wool sweater. In summer.", [on(1, "happy"), on(0, "surprised")]),
+          beat(C, "day", "She told me it was a warm day. It was eleven degrees.", [on(1, "happy")], { speaker: 1, line: "Lovely weather! Shorts weather." }),
+          beat(C, "day", "I told her my plan: stars tonight, northern lights at midnight.", [on(0, "excited"), on(1, "thinking")]),
+          beat(C, "day", "She laughed so hard she missed a turn.", [on(1, "excited", "shake"), on(0, "surprised")], { sfx: "snap" }),
+          beat(H, "sunset", "Nine o'clock at night. I set up my telescope by the harbor.", [on(0, "happy", "walk")], { place: "Old Harbor" }),
+          beat(H, "sunset", "The sun was still up. Fine. It just needed a minute.", [on(0, "thinking")]),
+          beat(H, "sunset", "Ten o'clock. Kids were riding bikes. Someone was mowing a lawn.", [on(0, "surprised")]),
+          beat(H, "sunset", "Eleven. Still bright enough to read my star map.", [on(0, "thinking")]),
+          beat(H, "sunset", "Midnight. The sun finally slid under the sea.", [on(0, "excited", "jump")], { sfx: "whoosh" }),
+          beat(H, "sunset", "I grabbed my telescope. Here comes the dark!", [on(0, "excited")]),
+          beat(H, "sunset", "But the sky just stayed this glowing orange-blue.", [on(0, "surprised")]),
+          beat(H, "sunset", "No stars. No green lights. Just a very confused tourist.", [on(0, "sad")]),
+          beat(H, "sunset", "Then, before three in the morning, the sun came back up.", [on(0, "scared", "shake")], { sfx: "rumble" }),
+          beat(H, "day", "My first guess: the sun was broken.", [on(0, "thinking")]),
+          beat(H, "day", "My second guess: Iceland left a giant lamp on and forgot.", [on(0, "thinking")], { speaker: 0, line: "Hello? Light switch?" }),
+          beat(CA, "day", "Sigga found me at breakfast, still holding my flashlights.", [on(1, "happy", "enter"), on(0, "sad")], { place: "Reykjavik" }),
+          beat(CA, "day", "The real reason? In June, Reykjavik's sun sets after midnight and rises before three.", [on(0, "surprised")], { card: "fact", sfx: "ding" }),
+          beat(CA, "day", "And in between, it barely dips below the horizon, so it never gets dark.", [on(1, "happy"), on(0, "surprised")]),
+          beat(CA, "day", "It's because Earth is tilted, about twenty-three degrees.", [on(1, "thinking")]),
+          beat(CA, "day", "In June, the top of the world leans toward the sun.", [on(1, "happy")], { speaker: 1, line: "We get the sun's night shift." }),
+          beat(CA, "day", "And Iceland sits right under the Arctic Circle, near the very top.", [on(1, "happy"), on(0, "thinking")]),
+          beat(CA, "day", "No dark sky means no stars, and no northern lights.", [on(0, "sad")]),
+          beat(CA, "day", "I had flown all this way in the brightest month of the year.", [on(0, "sad", "shake")]),
+          beat(BR, "day", "So Sigga showed me how Icelanders do summer.", [on(1, "happy", "enter"), on(0, "thinking")], { place: "Guesthouse" }),
+          beat(BR, "day", "Step one: blackout curtains. Thick ones.", [on(1, "happy")], { sfx: "whoosh" }),
+          beat(BR, "night", "Step two: a sleep mask. Instant night.", [on(0, "happy")]),
+          beat(BR, "night", "I slept like a rock for the first time all trip.", [on(0, "happy")]),
+          beat(H, "sunset", "Step three: stop waiting for night, and enjoy the light.", [on(1, "excited"), on(0, "excited")], { place: "Old Harbor" }),
+          beat(H, "sunset", "At midnight, the whole harbor was out, eating ice cream in the glow.", [on(0, "excited", "jump"), on(1, "happy")]),
+          beat(K, "sunset", "Sigga said up north, people even play golf through the night.", [on(1, "happy"), on(0, "surprised")], { place: "Up North" }),
+          beat(K, "sunset", "I tried a midnight hike instead. Best sunset of my life. It lasted hours.", [on(0, "excited", "walk")]),
+          beat(BE, "day", "On my last day, Sigga told me one more thing.", [on(1, "thinking"), on(0, "happy")], { place: "Black Sand Beach" }),
+          beat(BE, "day", "In December, it flips. The sun is up for only about four hours.", [on(1, "happy"), on(0, "surprised")], { sfx: "ding" }),
+          beat(BE, "night", "Long, dark winter nights. That's when the northern lights come out.", [on(0, "excited")]),
+          beat(BE, "night", "So I had the right country. Just the wrong month.", [on(0, "sad"), on(1, "happy")], { speaker: 1, line: "Come back in winter." }),
+          beat(BE, "night", "I'm going back in December, telescope and all.", [on(0, "excited", "jump")]),
+          beat(C, "day", "Dear Brickbury, the sun here works the night shift. Bring a sleep mask.", [on(0, "happy")], { card: "postcard", sfx: "ding" }),
+        ],
+        highlights: [
+          { start: 1, end: 22, hook: "I flew to Iceland to see the stars, and night never came." },
+          { start: 11, end: 33, hook: "It was midnight in Iceland, and the sun refused to go down." },
+          { start: 20, end: 43, hook: "Why doesn't it get dark in Iceland in June? A bus driver told me." },
+        ],
+        caption: "I packed three flashlights for a country with no night.",
+        hashtags: ["iceland", "funfacts", "travel", "midnightsun", "therealreason"],
+      };
+    },
+  },
+];
+
 export function demoThemes(): Theme[] {
   return [
     { theme: "Old tricks that looked foolish but were genius", why: "Ridicule-then-payoff tales built on a real trick are the most rewatched story shorts." },
@@ -697,6 +782,8 @@ export function demoPitches(style: StoryStyle, usedTitles: string[]): Pitch[] {
       ? WHATIF_EPISODES.map((e) => e.pitch)
       : style === "pov"
       ? POV_EPISODES.map((e) => e.pitch)
+      : style === "country"
+      ? COUNTRY_EPISODES.map((e) => e.pitch)
       : style === "hook"
       ? HOOK_WORLDS.map((w) => ({
           title: w.title,
@@ -730,6 +817,10 @@ export function demoStory(pitch: Pitch, style: StoryStyle, _length: VideoLength 
   }
   if (style === "pov") {
     const ep = POV_EPISODES.find((e) => e.pitch.title.toLowerCase() === base) ?? pick(r, POV_EPISODES);
+    return { ...ep.build(), title: pitch.title.slice(0, 80) };
+  }
+  if (style === "country") {
+    const ep = COUNTRY_EPISODES.find((e) => e.pitch.title.toLowerCase() === base) ?? pick(r, COUNTRY_EPISODES);
     return { ...ep.build(), title: pitch.title.slice(0, 80) };
   }
   if (style === "hook") {

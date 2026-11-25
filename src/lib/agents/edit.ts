@@ -87,6 +87,7 @@ export function buildProps(opts: {
     look: opts.look,
     characters: opts.story.characters,
     counter: opts.story.counter ?? null,
+    country: opts.story.country ?? null,
     beats: opts.plan.beats.map(({ narrationFile, lineFile, ...b }) => ({
       ...b,
       narrationAudio: url(narrationFile),

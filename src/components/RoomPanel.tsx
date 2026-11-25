@@ -83,6 +83,7 @@ function Producer({ state, act, pending }: { state: StudioState; act: Act; pendi
               <option value="cozy">Cozy (30-45s, gentle tale)</option>
               <option value="gossip">Town Gossip (60s, Brickbury comedy, loops)</option>
               <option value="whatif">What If ("what if you..." with a ticking counter, real facts)</option>
+              <option value="country">Country Story (Pip's trip: a real fun fact about a country, told as a story)</option>
               <option value="pov">POV Story (first person: the real reason behind a strange town rule)</option>
             </select>
           </label>

@@ -9,6 +9,7 @@ import { SKY, seeded } from "./art/palette";
 import { PropArt } from "./art/Props";
 import { PaperCharacterArt } from "./art/PaperCharacter";
 import { Counter, NewsCard, PAPER_LAYER_FILTER, PaperFinish, Pigeon, QuestionCard, TornCaption } from "./Paper";
+import { FactPostcard, HomePostcard, LuggageTag, PassportCard, SnapshotFrame, TicketCaption } from "./Trip";
 import { HookCaption, NarratorBox, SingleWordCaption, SpeechBubble } from "./Text";
 
 const FEET_Y = 1560;
@@ -124,7 +125,9 @@ export const Scene: React.FC<{
   look: Look;
   style: StoryStyle;
   counter?: { label: string; unit: string } | null;
-}> = ({ beat, index, characters, look, style, counter }) => {
+  country?: string | null;
+  freshPlace?: boolean; // Country Story: the luggage tag changes on this beat
+}> = ({ beat, index, characters, look, style, counter, country, freshPlace }) => {
   const frame = useCurrentFrame();
   const cam = camera(beat, frame, style);
   const layers = sceneLayers(beat.setting, beat.time, `b${index}`);
@@ -140,7 +143,9 @@ export const Scene: React.FC<{
     ) : (
       beat.captions.map((c, i) =>
         frame >= c.from && frame < (i === beat.captions.length - 1 ? beat.durationInFrames : c.to) ? (
-          style === "twist" ? (
+          style === "country" ? (
+            <TicketCaption key={i} chunk={c} frame={frame - c.from} index={index * 10 + i} />
+          ) : style === "twist" ? (
             <SingleWordCaption key={i} chunk={c} frame={frame - c.from} low={beat.camera === "insert"} />
           ) : isPaper(style) ? (
             <TornCaption key={i} chunk={c} frame={frame - c.from} index={index * 10 + i} top={style === "whatif" ? 440 : 250} />
@@ -152,6 +157,17 @@ export const Scene: React.FC<{
     );
 
   const paper = isPaper(style);
+  const trip = style === "country";
+  const land = country || beat.place || "Abroad";
+  if (trip && beat.card === "passport") return <PassportCard beat={beat} frame={frame} characters={characters} country={land} />;
+  if (trip && beat.card === "fact") return <FactPostcard beat={beat} frame={frame} country={land} />;
+  if (trip && beat.card === "postcard") return <HomePostcard beat={beat} frame={frame} characters={characters} country={land} />;
+  const journal = trip ? (
+    <>
+      <SnapshotFrame />
+      <LuggageTag country={land} place={beat.place ?? null} frame={frame} fresh={!!freshPlace} />
+    </>
+  ) : null;
   if (paper && beat.card === "question") {
     return <QuestionCard beat={beat} frame={frame} characters={characters} />;
   }
@@ -179,6 +195,7 @@ export const Scene: React.FC<{
           </svg>
         </AbsoluteFill>
         {paper ? <PaperFinish /> : deep && <Lighting beat={beat} frame={frame} />}
+        {journal}
         {counterTag}
         {captions}
       </AbsoluteFill>
@@ -247,6 +264,7 @@ export const Scene: React.FC<{
         />
       )}
       {style === "gossip" && <Pigeon frame={frame} talking={frame < beat.narrationFrames} enter={index === 1} />}
+      {journal}
       {counterTag}
       {captions}
     </AbsoluteFill>

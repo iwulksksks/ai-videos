@@ -36,8 +36,10 @@ export const MUSIC_MOODS = ["playful", "tender", "mystery", "adventure", "dreamy
 // Town Gossip's newspaper cards: a "Brickbury Bugle" headline opens the episode and a
 // "correction" closes it with the twist.
 // What If opens on a "question" card instead.
-export const CARDS = ["none", "headline", "correction", "question"] as const;
-export const STYLES = ["twist", "hook", "cozy", "gossip", "whatif", "pov"] as const;
+// Country Story: a "passport" stamp opens the trip, a "fact" postcard shows the real fact,
+// and a "postcard" home closes it.
+export const CARDS = ["none", "headline", "correction", "question", "passport", "fact", "postcard"] as const;
+export const STYLES = ["twist", "hook", "cozy", "gossip", "whatif", "pov", "country"] as const;
 // "long": about 2.5 minutes for YouTube, with the best moments cut into TikTok clips.
 export const LENGTHS = ["short", "long"] as const;
 export const LOOKS = ["2.5d", "flat"] as const;
@@ -113,6 +115,7 @@ export const BeatSchema = z.object({
   sfx: z.enum(SFX).nullable().optional(), // sound effect at the start of the beat
   card: z.enum(CARDS).nullable().optional(), // Town Gossip / What If: show this beat as a card
   value: z.number().nullable().optional(), // What If: where the on-screen counter is during this beat
+  place: z.string().max(40).nullable().optional(), // Country Story: the town or spot on the luggage tag, kept until it changes
 });
 export type Beat = z.infer<typeof BeatSchema>;
 
@@ -132,6 +135,8 @@ export const StorySchema = z.object({
   mechanism: z.string().max(300).nullable().optional(),
   // What If: the counter that ticks through the video, like { label: "DEPTH", unit: "m" }
   counter: z.object({ label: z.string().min(1).max(28), unit: z.string().max(12) }).nullable().optional(),
+  // Country Story: the real country the story happens in, like "Iceland"
+  country: z.string().max(40).nullable().optional(),
   beats: z.array(BeatSchema).min(3).max(60),
   highlights: z.array(HighlightSchema).max(4).nullable().optional(),
   caption: z.string().min(4).max(400),
@@ -191,6 +196,7 @@ export type VideoProps = {
   musicLoop: boolean; // true for your own MP3s, which may be shorter than the video
   musicMood: MusicMood;
   counter?: { label: string; unit: string } | null; // What If
+  country?: string | null; // Country Story
   introFrames: number; // title card (cozy) or 0
   outroFrames: number; // "The End" / "Part 2?" card
   endText?: string | null; // TikTok clips: the end card says this instead (e.g. "Full story on YouTube")
@@ -244,6 +250,15 @@ export const STYLE_RULES = {
     maxLineWords: 8,
     seconds: "55 to 70",
   },
+  // Country Story: Pip's trip, a mix-up, and the real fact about the country behind it.
+  country: {
+    minBeats: 18,
+    maxBeats: 26,
+    minWords: 3,
+    maxWords: 16,
+    maxLineWords: 8,
+    seconds: "55 to 70",
+  },
   cozy: {
     minBeats: 5,
     maxBeats: 8,
@@ -270,5 +285,5 @@ export function rulesFor(style: StoryStyle, length: VideoLength = "short"): Styl
 
 /** Styles drawn in the paper-cutout Brickbury look. */
 export function isPaper(style: StoryStyle): boolean {
-  return style === "gossip" || style === "whatif" || style === "pov";
+  return style === "gossip" || style === "whatif" || style === "pov" || style === "country";
 }

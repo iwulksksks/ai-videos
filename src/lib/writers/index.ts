@@ -111,6 +111,8 @@ export async function writeStory(pitch: Pitch, style: StoryStyle, jobId?: number
   const r = await write("script", StorySchema, storyPrompt(pitch, style, length, cast), () => demoStory(pitch, style, length), jobId);
   // What If: fall back to the counter the pitch planned when the writer leaves it out.
   if (style === "whatif" && !r.value.counter) r.value.counter = whatifCounter(pitch);
+  // Country Story: fall back to the country the pitch planned.
+  if (style === "country" && !r.value.country && pitch.era) r.value.country = pitch.era.trim().slice(0, 40);
   // Small local models often stop well short of the beat count; stretch the draft to length.
   if (r.engine !== "demo") r.value = await stretchStory(r.value, style, length, r.engine, jobId);
   return r;

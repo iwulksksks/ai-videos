@@ -39,6 +39,40 @@ const POV_INTRO =
   "Pip is the one kid who asks why, follows the clues, and finds THE REAL REASON, which is surprising, funny or kind, and makes sense of every clue. " +
   "No chosen ones, no deadly trials or games, no paradise, no villains taking over the town, no rules about colors, and no little sister. Stories come from town life, not the internet.";
 
+const COUNTRY_INTRO =
+  `Country Story videos are true-fact travel stories. Pip (${HERO.role}), a paper-cutout puppet from ${TOWN.name}, travels to ONE real country and tells us, in first person, about the day something there completely confused him. ` +
+  "The whole story is built around ONE real, checkable fact about that country (its nature, history, a custom, a law, food, geography or science). Pip runs into the fact the hard way, gets it wrong, and a local explains THE REAL REASON. " +
+  "It is a story with a plan, a funny mix-up, wrong guesses, a reveal and a payoff, NOT a list of facts. " +
+  "Be warm and curious about the country: the joke is always on Pip being a tourist, never on the country or its people. No stereotypes, no politics, no religion jokes, no war, no disasters with victims, no living famous people.";
+
+function countryRules(pitch: Pitch, length: VideoLength): string[] {
+  const r = rulesFor("country", length);
+  const country = (pitch.era ?? "").trim() || "the country in the pitch";
+  return [
+    `STYLE COUNTRY STORY. ${r.minBeats} to ${r.maxBeats} beats, ${r.seconds} seconds, ${spokenWords(length, "170 to 210")} spoken words in total.`,
+    COUNTRY_INTRO,
+    `The country is ${country}. Put it in 'country' (its usual English name, like "Iceland").`,
+    "Narration is FIRST PERSON: Pip (character 0) tells it and says 'I', past tense, quick and friendly, like telling a friend about a trip.",
+    `ONE short sentence per beat, ideally ${r.minWords + 3} to ${r.maxWords} words, so the picture changes about every 3 seconds.`,
+    "Story flow, in this order (each step is one or more beats):",
+    `  1. Beat 1 is the PASSPORT card ('card': 'passport'): a hook of 8 to 14 words that teases the strange thing that happened, like 'In Iceland, I waited all night for it to get dark. It never did.' Pip in its cast. No line.`,
+    "  2. The plan: why I came and what I expected, in two or three beats.",
+    "  3. I meet a local (character 1): one funny detail about them.",
+    "  4. The mix-up: I do what I'd do at home, and it goes wrong in a funny way because of the fact. Build it over several beats.",
+    "  5. My two wrong guesses about why, each sillier than the last.",
+    "  6. The reveal: a 'fact' card ('card': 'fact') whose narration starts with 'The real reason?' and states the real fact with a real number, date or name, 10 to 18 words.",
+    "  7. Why it's true, in two or three plain beats a kid understands (the local can say a line).",
+    "  8. I try again the local way, and it works, with a payoff.",
+    "  9. One more TRUE bonus fact that connects to the first one and surprises.",
+    "  10. The LAST beat is a 'postcard' card ('card': 'postcard') home: its narration starts with 'Dear Brickbury,' and gives a funny one-sentence lesson. No 'part 2', no 'follow for more', so it loops.",
+    "Every fact must be TRUE and checkable. When you are not sure of a fact, use a different one. Put the real fact and the bonus fact in 'mechanism', in two plain sentences with the numbers.",
+    "On beats where the story moves somewhere new, set 'place' to the real town, city or spot in that country (like 'Reykjavik' or 'Lake Myvatn'), 1 to 3 words; null keeps the last place.",
+    `The local may say short lines (under ${r.maxLineWords} words), at most 5 in the story. Give the local a real, common first name from that country and a fitting color.`,
+    "Use settings that fit each step and the country's climate, and change them as you go (city, harbor, market, cafe, forest, beach, canyon, mine, palace, castle, bedroom...). The 'beach' set has palm trees, so only use it for warm countries. Use 'time' to match the story.",
+    "Title: 5 to 10 words, title case, a mystery about the country (like 'Why the Sun Never Set in Iceland'). caption: one short line. hashtags: 4 to 6, including the country.",
+  ];
+}
+
 function povRules(length: VideoLength): string[] {
   const r = rulesFor("pov", length);
   return [
@@ -154,6 +188,12 @@ export function pitchesPrompt(opts: {
           POV_INTRO,
           "Pitch rules that feel oddly specific and believable, where the real reason is a genuine surprise. Vary them: some funny, some sweet, some spooky-but-safe.",
         ].join("\n")
+      : opts.style === "country"
+      ? [
+          "Style COUNTRY STORY: first-person trip stories, each built around one real fact about one country.",
+          COUNTRY_INTRO,
+          "Pick a different country for each pitch, from different parts of the world, and facts most people don't know but can check. The fact must cause a funny mix-up for a tourist. Don't pitch a country we just did.",
+        ].join("\n")
       : opts.style === "hook"
       ? "Style HOOK: first-person underdog stories. A world with one clear rule (everyone gets a power, mark, rank or creature at a certain age). The overlooked hero turns out to be far beyond everyone else, ending on a cliffhanger."
       : "Style COZY: gentle, funny, warm little tales with an emotional payoff and no moral lecture.";
@@ -176,10 +216,12 @@ export function pitchesPrompt(opts: {
       ? `Pitch ${opts.count} different What If videos. Each pitch: title (starts with "What If You", 4 to 8 words, title case), logline (one sentence), genre (one or two words, like science or space), twist (the final, most extreme step and its funny line), mechanism (the real facts the steps are built on, in two or three plain sentences, with real numbers) and era (the counter as "LABEL | unit", for example "DEPTH | m", "DAYS AWAKE | days" or "SPEED | km/h").`
       : opts.style === "pov"
       ? `Pitch ${opts.count} different POV stories. Each pitch: title ("The Real Reason" plus the rule, 5 to 10 words, title case), logline (the rule and why it matters to Pip, one sentence), genre (one or two words, like mystery or comedy), twist (the real reason, in one sentence) and skeptic (the scary theory everyone believes, in one sentence).`
+      : opts.style === "country"
+      ? `Pitch ${opts.count} different Country Stories. Each pitch: title (a mystery about the country, 5 to 10 words, title case), logline (what confuses Pip there, one sentence), genre (one or two words, like nature or customs), twist (the real reason, in one sentence), mechanism (the real fact and one related bonus fact, in two plain sentences with real numbers), era (the country's name only) and skeptic (the local Pip meets: a common first name from that country and who they are, like "Sigga, a bus driver").`
       : opts.style === "twist"
       ? `Pitch ${opts.count} different original stories. Each pitch: title (4 to 8 words, title case, framed as a mystery like "Why ...", "How ... Worked" or "The ... That ...", no emoji or hashtags), logline (one sentence), genre (one or two words), twist (the payoff in one sentence), mechanism (the real trick or fact, explained correctly in one or two plain sentences), era (when and where it is set) and skeptic (who mocks the hero).`
       : `Pitch ${opts.count} different original stories. Each pitch: title (max 6 words), logline (one sentence), genre (one or two words) and twist (the surprise in one sentence).`,
-    opts.style === "twist" || opts.style === "gossip" || opts.style === "whatif" || opts.style === "pov"
+    opts.style === "twist" || opts.style === "gossip" || opts.style === "whatif" || opts.style === "pov" || opts.style === "country"
       ? 'Answer as JSON: {"pitches":[{"title":"...","logline":"...","genre":"...","twist":"...","mechanism":"...","era":"...","skeptic":"..."}]}'
       : 'Answer as JSON: {"pitches":[{"title":"...","logline":"...","genre":"...","twist":"..."}]}',
   ]
@@ -201,6 +243,9 @@ export function vocab(style?: StoryStyle): string {
     `Optional per beat: 'prop' (${PROPS.join(", ")}) shows a big close-up of that object instead of the characters, for explaining how something works; 'sfx' (${SFX.join(", ")}) plays a sound effect as the beat starts. Use null when not needed.`,
     style === "gossip" ? "'card' is 'headline' on the first beat, 'correction' on the last beat, and null on every other beat." : "",
     style === "whatif" ? "'card' is 'question' on the first beat and null on every other beat. 'value' is the counter's number in that beat (a plain number in the counter's unit, never text), or null to keep the last value." : "",
+    style === "country"
+      ? "'card' is 'passport' on the first beat, 'fact' on the reveal beat, 'postcard' on the last beat, and null on every other beat. 'place' is the real town or spot when the story moves somewhere new, otherwise null."
+      : "",
     "caption: a short, punchy social caption (one or two sentences). hashtags: 5 to 8 tags without the # sign.",
   ]
     .filter(Boolean)
@@ -299,6 +344,11 @@ export function storyPrompt(pitch: Pitch, style: StoryStyle, length: VideoLength
       ? gossipRules(pitch, length)
       : style === "whatif"
       ? whatifRules(pitch, length)
+      : style === "country"
+      ? [
+          ...countryRules(pitch, length),
+          `'characters' JSON: Pip first, exactly ${JSON.stringify(episodeCast([])[0])}, then the local${pitch.skeptic ? ` (${pitch.skeptic})` : ""}, and at most one more one-off character.`,
+        ]
       : style === "pov"
       ? [
           ...povRules(length),
@@ -328,16 +378,24 @@ export function storyPrompt(pitch: Pitch, style: StoryStyle, length: VideoLength
     `Twist: ${pitch.twist}`,
     pitch.mechanism ? `Real mechanism: ${pitch.mechanism}` : "",
     pitch.era ? `Era and place: ${pitch.era}` : "",
-    pitch.skeptic ? (style === "pov" ? `The scary theory everyone believes: ${pitch.skeptic}` : `Who mocks the hero: ${pitch.skeptic}`) : "",
+    pitch.skeptic
+      ? style === "pov"
+        ? `The scary theory everyone believes: ${pitch.skeptic}`
+        : style === "country"
+        ? `The local Pip meets: ${pitch.skeptic}`
+        : `Who mocks the hero: ${pitch.skeptic}`
+      : "",
     "",
     ...styleRules,
     ...(length === "long" ? longRules(style) : []),
-    style === "gossip" ? "Use the characters exactly as listed above, in that order. Character 0 (Pip) is the hero." : style === "whatif" ? "Character 0 (Pip) is 'you'." : style === "pov" ? "Use the characters exactly as listed above. Character 0 (Pip) is 'I'." : "Use 1 to 3 characters. Character 0 is the hero.",
+    style === "gossip" ? "Use the characters exactly as listed above, in that order. Character 0 (Pip) is the hero." : style === "whatif" ? "Character 0 (Pip) is 'you'." : style === "pov" ? "Use the characters exactly as listed above. Character 0 (Pip) is 'I'." : style === "country" ? "Character 0 (Pip) is 'I'. Character 1 is the local." : "Use 1 to 3 characters. Character 0 is the hero.",
     vocab(style),
     "",
     withHighlights(
       style === "whatif"
       ? 'Answer as JSON: {"title":"...","logline":"...","mechanism":"...","counter":{"label":"...","unit":"..."},"characters":[{"name":"...","color":"...","accessory":"..."}],"beats":[{"setting":"...","time":"...","narration":"...","cast":[{"who":0,"mood":"...","action":"..."}],"speaker":null,"line":null,"prop":null,"sfx":null,"card":null,"value":null}],"caption":"...","hashtags":["..."]}'
+      : style === "country"
+      ? 'Answer as JSON: {"title":"...","logline":"...","mechanism":"...","country":"...","characters":[{"name":"...","color":"...","accessory":"..."}],"beats":[{"setting":"...","time":"...","place":null,"narration":"...","cast":[{"who":0,"mood":"...","action":"..."}],"speaker":null,"line":null,"prop":null,"sfx":null,"card":null}],"caption":"...","hashtags":["..."]}'
       : style === "gossip"
       ? 'Answer as JSON: {"title":"...","logline":"...","mechanism":null,"characters":[{"name":"...","color":"...","accessory":"..."}],"beats":[{"setting":"...","time":"...","narration":"...","cast":[{"who":0,"mood":"...","action":"..."}],"speaker":null,"line":null,"prop":null,"sfx":null,"card":null}],"caption":"...","hashtags":["..."]}'
       : 'Answer as JSON: {"title":"...","logline":"...","mechanism":null,"characters":[{"name":"...","color":"...","accessory":"..."}],"beats":[{"setting":"...","time":"...","narration":"...","cast":[{"who":0,"mood":"...","action":"..."}],"speaker":null,"line":null,"prop":null,"sfx":null}],"caption":"...","hashtags":["..."]}',
@@ -362,6 +420,8 @@ export function editPrompt(story: Story, style: StoryStyle, issues: string[]): s
       ? "Check: beat 1 is a 'question' card starting with 'What if you'; narration is second person ('you'), present tense, short; 'counter' is set and every step has a 'value' that only goes up, in big jumps; each step is more extreme than the last; it ends on the most extreme step with a funny line and no 'part 2'. FACT CHECK every number and claim: depths, heights, temperatures, records, body effects. Fix anything wrong with small edits (verdict 'fixed'); if the core idea is false or you are not sure the facts are true, the verdict is 'rejected'."
       : style === "pov"
       ? "Check: Pip is character 0 and narrates in first person ('I'); beat 1 states one strange town rule as a plain fact; the story follows the flow: how the town lives with it, why it matters to me, the day it happens, three clues, the scary theory, then 'The real reason?' reveal that explains every clue, and a small joke callback to end; sentences are short; no chosen ones, deadly trials, paradise, color rules, villains taking over or little sister; no 'part 2'. If 'highlights' are present, keep them and keep their beat numbers right after any edit."
+      : style === "country"
+      ? "Check: Pip is character 0 and narrates in first person ('I'); 'country' is set to a real country; beat 1 is a 'passport' card with a short hook; it is a STORY (plan, mix-up, two wrong guesses, reveal, trying again, bonus fact), not a list of facts; the reveal is a 'fact' card starting with 'The real reason?'; the last beat is a 'postcard' card starting with 'Dear Brickbury,'; sentences are short; the joke is on Pip the tourist, never on the country or its people; no stereotypes, politics or religion jokes. FACT CHECK every fact, number, date and place name about the country. Fix small mistakes (verdict 'fixed'); if the main fact is false or you are not sure it is true, the verdict is 'rejected'. If 'highlights' are present, keep them and keep their beat numbers right after any edit."
       : style === "hook"
       ? "Check: first line states the world's rule; first person; underdog; clear reveal far beyond everyone; shocked reactions; ends on a cliffhanger; every narration line is short and punchy."
       : "Check: clear setup, problem, turn and payoff; gentle and funny; no moral lecture.",
@@ -395,7 +455,7 @@ export function expandPrompt(opts: {
   const r = rulesFor(style, length);
   const part = story.beats.slice(from, to + 1);
   const voice =
-    style === "pov" || style === "hook"
+    style === "pov" || style === "hook" || style === "country"
       ? "first person ('I'), like the rest of the story"
       : style === "whatif"
       ? "second person ('you'), present tense, like the rest of the story"
@@ -416,6 +476,8 @@ export function expandPrompt(opts: {
     `Characters (use their index in 'cast' and 'speaker'): ${story.characters.map((c, i) => `${i} = ${c.name}`).join(", ")}.`,
     style === "whatif"
       ? `Each beat has a 'value' for the counter (${story.counter?.label ?? "the counter"}${story.counter?.unit ? `, in ${story.counter.unit}` : ""}) that never goes down${typeof prevValue === "number" ? `, starting from at least ${prevValue}` : ""}${typeof nextValue === "number" ? ` and staying at or below ${nextValue}` : ""}. Every fact must be true.`
+      : style === "country"
+      ? "Keep every fact true. Set 'place' only if the story moves to a new real spot in the country, otherwise null."
       : "",
     "'card' is null on every one of these beats.",
     vocab(style),
@@ -423,7 +485,7 @@ export function expandPrompt(opts: {
     "The beats to rewrite:",
     JSON.stringify(part),
     "",
-    `Answer as JSON with ${want} beats: {"beats":[{"setting":"...","time":"...","narration":"...","cast":[{"who":0,"mood":"...","action":"..."}],"speaker":null,"line":null,"prop":null,"sfx":null${style === "whatif" ? ',"value":null' : ""}}]}`,
+    `Answer as JSON with ${want} beats: {"beats":[{"setting":"...","time":"...","narration":"...","cast":[{"who":0,"mood":"...","action":"..."}],"speaker":null,"line":null,"prop":null,"sfx":null${style === "whatif" ? ',"value":null' : style === "country" ? ',"place":null' : ""}}]}`,
   ]
     .filter((l) => l !== "")
     .join("\n");
